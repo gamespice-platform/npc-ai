@@ -1,15 +1,15 @@
-class_name DotNpcAiRandomSelector
-extends DotNpcAiComposite
+class_name GSNpcAiRandomSelector
+extends GSNpcAiComposite
 
 ## Picks one child by weight and runs it: variety without a second decision model. Without chance every NPC of a kind does the same thing (three zombies searching one spot arrive together and stand in a row); weights say "usually chase, sometimes flank" where an even selector cannot.
 ## The choice is made on entry and kept: re-rolling a RUNNING child abandons it each tick, the addon's RUNNING-is-resumed rule from the tempting direction.
-## `DotNpcAiRandomSelector.new(&"search", [go_left, go_right, wait])`, then `set_weights([2.0, 2.0, 1.0])` and `salt = npc.seed`.
+## `GSNpcAiRandomSelector.new(&"search", [go_left, go_right, wait])`, then `set_weights([2.0, 2.0, 1.0])` and `salt = npc.seed`.
 
 ## One weight per child. Missing or short, every child weighs 1.
 var weights: PackedFloat32Array = PackedFloat32Array()
 
 ## Mixed into the roll so two of these in one tree, or on two NPCs, disagree.
-## At zero every NPC in the world agrees, which this node exists to prevent. Set it to the NPC's seed ([member DotNpcInstance.seed]), never its instance id, which moves between runs.
+## At zero every NPC in the world agrees, which this node exists to prevent. Set it to the NPC's seed ([member GSNpcInstance.seed]), never its instance id, which moves between runs.
 var salt: int = 0
 
 ## Whether a chosen child that fails ends this node, or the next one is tried.
@@ -20,11 +20,11 @@ var _chosen: int = -1
 var _tried: Array[int] = []
 
 
-func _init(p_name: StringName = &"", p_children: Array[DotNpcAiNode] = []) -> void:
+func _init(p_name: StringName = &"", p_children: Array[GSNpcAiNode] = []) -> void:
 	super(p_name, p_children)
 
 
-func set_weights(values: Array) -> DotNpcAiRandomSelector:
+func set_weights(values: Array) -> GSNpcAiRandomSelector:
 	weights = PackedFloat32Array()
 
 	for value in values:
@@ -48,17 +48,17 @@ func chosen() -> int:
 	return _chosen
 
 
-func _enter(ctx: DotNpcAiContext) -> void:
+func _enter(ctx: GSNpcAiContext) -> void:
 	_tried.clear()
 	_chosen = _roll(ctx, [])
 
 
-func _tick(ctx: DotNpcAiContext) -> Status:
+func _tick(ctx: GSNpcAiContext) -> Status:
 	if _children.is_empty():
 		return Status.FAILURE
 
 		# Resumed at whatever was running, not re-rolled. Reads [member _running_child] directly, not
-		# [method DotNpcAiComposite._resume_from], whose default 0 is right for a selector and wrong here:
+		# [method GSNpcAiComposite._resume_from], whose default 0 is right for a selector and wrong here:
 		# every roll would land on child zero (three hundred picks of three hundred went one way).
 	if _running_child >= 0 and _running_child < _children.size():
 		_chosen = _running_child
@@ -91,7 +91,7 @@ func _tick(ctx: DotNpcAiContext) -> Status:
 
 
 ## Picks a child by weight, skipping anything in [param exclude].
-func _roll(ctx: DotNpcAiContext, exclude: Array) -> int:
+func _roll(ctx: GSNpcAiContext, exclude: Array) -> int:
 	var total := 0.0
 
 	for i in _children.size():
@@ -102,7 +102,7 @@ func _roll(ctx: DotNpcAiContext, exclude: Array) -> int:
 	if total <= 0.0:
 		return -1
 
-	var target := DotNpcAiNode.deterministic_unit(
+	var target := GSNpcAiNode.deterministic_unit(
 		ctx.tick_index + salt, salt ^ 0x1b873593
 	) * total
 	var walked := 0.0

@@ -1,8 +1,8 @@
-class_name DotNpcAiCrowdGrid
+class_name GSNpcAiCrowdGrid
 extends RefCounted
 
 ## A crowd's positions in a flat spatial hash rebuilt once a tick, so "who is near" costs a few cells.
-## Cells are linked lists in packed arrays in insertion order, so sums match DotNpcAiSteering.separate bit for bit.
+## Cells are linked lists in packed arrays in insertion order, so sums match GSNpcAiSteering.separate bit for bit.
 
 ## The cell's side in metres; a query reaches every cell its radius touches.
 var cell: float = 2.0
@@ -107,7 +107,7 @@ func near(point: Vector3, radius: float, out: PackedInt32Array) -> PackedInt32Ar
 	return out
 
 
-## [method DotNpcAiSteering.separate] over the crowd round entry [param self_index], with no
+## [method GSNpcAiSteering.separate] over the crowd round entry [param self_index], with no
 ## array built: neighbours are those within [param query] metres of where it was added (the
 ## broad phase a caller of `separate` would have asked for), pushed from [param from].
 func separation(self_index: int, from: Vector3, radius: float, query: float, tie_break: Vector3) -> Vector3:

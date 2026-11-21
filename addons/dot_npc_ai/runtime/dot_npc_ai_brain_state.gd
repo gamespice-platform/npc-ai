@@ -1,39 +1,39 @@
-extends DotNpcBrain
+extends GSNpcBrain
 
-## The fields and constants of [DotNpcAiBrain], split out so the brain file holds behaviour only.
+## The fields and constants of [GSNpcAiBrain], split out so the brain file holds behaviour only.
 ##
-## Not a public class: extend [DotNpcAiBrain] (by path, like every brain), never this.
+## Not a public class: extend [GSNpcAiBrain] (by path, like every brain), never this.
 
 ## The tree, or null for a game using only the machine.
-var tree: DotNpcAiNode = null
+var tree: GSNpcAiNode = null
 
 ## The machine, or null for a game using only the tree.
 ## Both may be set and the tree runs first: the machine holds what the NPC IS (patrolling, fleeing), the tree decides what it does within that, and a reactive branch can write the blackboard for the machine's transitions the same tick.
-var machine: DotNpcAiMachine = null
+var machine: GSNpcAiMachine = null
 
 ## This NPC's memory. Built here so a subclass always has one.
-var blackboard: DotNpcAiBlackboard = null
+var blackboard: GSNpcAiBlackboard = null
 
 ## What the tree and the machine are handed. Built once and advanced, never rebuilt.
-var context: DotNpcAiContext = null
+var context: GSNpcAiContext = null
 
 ## Who this NPC is. Handed to the context, where every node can reach it.
-## Give each NPC its own seed: twenty sharing a preset's seed take the same shot with the same error at once (a firing squad). [method DotNpcAiCharacter.with_seed] prevents it, and `_npc_ready` calls it for a brain that did not.
-var character: DotNpcAiCharacter = null
+## Give each NPC its own seed: twenty sharing a preset's seed take the same shot with the same error at once (a firing squad). [method GSNpcAiCharacter.with_seed] prevents it, and `_npc_ready` calls it for a brain that did not.
+var character: GSNpcAiCharacter = null
 
 ## The character as the game made it, before the server's [member skill] moved it.
 ## [member character] is the one in force. This is kept so a skill change applies to what was authored, not to the last change's result, or turning skill up and back down would not come back.
-var base_character: DotNpcAiCharacter = null
+var base_character: GSNpcAiCharacter = null
 
 ## The server's adjustment, or null for "as authored". Found on the director — see
-## [method DotNpcAiSkill.attach] — or assigned by a game that keeps its own.
-var skill: DotNpcAiSkill = null
+## [method GSNpcAiSkill.attach] — or assigned by a game that keeps its own.
+var skill: GSNpcAiSkill = null
 
 ## Which state the machine starts in. Empty to leave it stopped.
 var initial_state: StringName = &""
 
 ## What the tree returned on the last tick. For a console command.
-var last_status: DotNpcAiNode.Status = DotNpcAiNode.Status.FAILURE
+var last_status: GSNpcAiNode.Status = GSNpcAiNode.Status.FAILURE
 
 ## When a search reached where it was going and started looking round.
 const KEY_SEARCH_ARRIVED := &"ai.search_arrived"
@@ -68,23 +68,23 @@ const KEY_PATROL_ARRIVED := &"ai.patrol_arrived"
 const KEY_PATROL_VISITS := &"ai.patrol_visits"
 
 ## What this NPC knows about its enemies — several, how it knows, and where they went.
-var memory: DotNpcAiMemory = null
+var memory: GSNpcAiMemory = null
 
 ## The world's sounds, found on the director. Null hears nothing.
-var sounds: DotNpcAiSounds = null
+var sounds: GSNpcAiSounds = null
 
 ## Where players go on this map, found on the director. Null patrols nothing.
-var heatmap: DotNpcAiHeatmap = null
+var heatmap: GSNpcAiHeatmap = null
 
 ## Shots this NPC has taken. The seed of each shot's error, so the same shot misses the
 ## same way on a replay and two shots never miss identically.
 var shots_fired: int = 0
 
 ## This NPC's squad, or null to fight alone. Joined after `_build` from [member squad_name].
-var squad: DotNpcAiSquad = null
+var squad: GSNpcAiSquad = null
 
 ## The squad to join. From `"squad"` in the definition's meta unless a game sets it in
-## `_build`; empty fights alone. Needs a [DotNpcAiSquads] on the director.
+## `_build`; empty fights alone. Needs a [GSNpcAiSquads] on the director.
 var squad_name: StringName = &""
 
 ## How many of a squad may attack one target at once. `"attackers"` in the meta.
@@ -105,14 +105,14 @@ var report_interval: float = 0.5
 ## The NPC circles at walking pace; this is how far ahead of it the point it walks at is.
 var flank_lead: float = 0.8
 
-## The level-of-detail scheduler this brain asks before thinking, found on [DotRegistry]. Null thinks every tick.
-var scheduler: DotNpcAiScheduler = null
+## The level-of-detail scheduler this brain asks before thinking, found on [GSRegistry]. Null thinks every tick.
+var scheduler: GSNpcAiScheduler = null
 
 ## Whether a skipped think keeps walking the last steering target (cheap movement, no sensing).
 var cruise_between_thinks: bool = true
 
 ## The utility scorer, or null (the default: off). See [method use_utility].
-var utility: DotNpcAiUtility = null
+var utility: GSNpcAiUtility = null
 
 ## Opt-in (0, the default, asks the director's path every think): how many consecutive thinks may steer for the waypoint the last [code]path_toward[/code]
 ## returned instead of asking again. A think asks afresh as soon as the destination has moved more than [member path_reuse_goal_m], the NPC has strayed more than
@@ -172,16 +172,16 @@ var _skill_revision: int = -1
 
 ## The character [method _refresh_character] last produced, so a game that assigns a new
 ## one mid-life is noticed rather than silently overwritten on the next skill change.
-var _applied: DotNpcAiCharacter = null
+var _applied: GSNpcAiCharacter = null
 
 var _attack_slot_target: StringName = &""
 var _attack_slot_name: StringName = &""
 
 ## Seconds an NPC steering at somewhere more than a couple of metres off may make no headway
-## before its path is asked for again without smoothing (GameSpice NPC's `DotNpcPath.go_rough`).
+## before its path is asked for again without smoothing (GameSpice NPC's `GSNpcPath.go_rough`).
 var stuck_seconds: float = 1.5
 
 var _progress_at: Vector3 = Vector3.INF
-var _avoid_node: DotNpcAiAvoidance = null
+var _avoid_node: GSNpcAiAvoidance = null
 var _avoid_probe: int = 0
 var _progress_since: float = 0.0

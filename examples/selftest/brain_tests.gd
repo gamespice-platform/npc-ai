@@ -11,7 +11,7 @@ class StubDirector extends Node:
 		return to
 
 
-class CountingSquad extends DotNpcAiSquad:
+class CountingSquad extends GSNpcAiSquad:
 	var pulls := 0
 
 	func pull(member: Object, since: int) -> int:
@@ -23,7 +23,7 @@ func _test_squad_pull_interval() -> void:
 	_section("a brain reads its squad's log at most every squad_pull_interval")
 
 	var spawner := _spawner()
-	var brain := spawner.spawn(&"zombie", Vector3.ZERO).brain as DotNpcAiBrain
+	var brain := spawner.spawn(&"zombie", Vector3.ZERO).brain as GSNpcAiBrain
 	var squad := CountingSquad.new(&"counted")
 	squad.pull_reports = true
 	var mate := FakeMember.new()
@@ -63,8 +63,8 @@ class RouteDirector extends Node:
 	## A fixed route round a corner; counts the asks, advances like the spawner's path_toward.
 	func path_toward(npc: Object, path: Object, to: Vector3) -> Variant:
 		path_calls += 1
-		var route := path as DotNpcPath
-		var at: Vector3 = (npc as DotNpcInstance).position()
+		var route := path as GSNpcPath
+		var at: Vector3 = (npc as GSNpcInstance).position()
 
 		if route.is_empty() or route.is_finished() or route.goal_at_compute.distance_to(to) > 3.0:
 			route.set_points(PackedVector3Array([at, Vector3(20, 0, 0), Vector3(20, 0, 20), to]), 1.0 + path_calls, to)
@@ -76,10 +76,10 @@ func _test_path_goal_reuse() -> void:
 	_section("an opt-in reuse of the path's waypoint across thinks")
 
 	var spawner := _spawner()
-	var brain := spawner.spawn(&"plain", Vector3.ZERO).brain as DotNpcAiBrain
+	var brain := spawner.spawn(&"plain", Vector3.ZERO).brain as GSNpcAiBrain
 	var dir := RouteDirector.new()
 	brain.director = dir
-	brain.path = DotNpcPath.new()
+	brain.path = GSNpcPath.new()
 	var dest := Vector3(20, 0, 40)
 
 	_check(brain.path_reuse_thoughts == 0, "reuse is off by default")
@@ -88,7 +88,7 @@ func _test_path_goal_reuse() -> void:
 	_check(dir.path_calls == 20, "off: every think asks the director", str(dir.path_calls))
 
 	dir.path_calls = 0
-	brain.path = DotNpcPath.new()
+	brain.path = GSNpcPath.new()
 	brain.path_reuse_thoughts = 4
 	var first := brain._path_goal(dest)
 	var second := brain._path_goal(dest)
@@ -124,10 +124,10 @@ func _test_path_goal_reuse() -> void:
 	var asks := []
 	for reuse in [0, 5]:
 		var sp := _spawner()
-		var walker := sp.spawn(&"plain", Vector3.ZERO).brain as DotNpcAiBrain
+		var walker := sp.spawn(&"plain", Vector3.ZERO).brain as GSNpcAiBrain
 		var d := RouteDirector.new()
 		walker.director = d
-		walker.path = DotNpcPath.new()
+		walker.path = GSNpcPath.new()
 		walker.path_reuse_thoughts = reuse
 		for i in 400:
 			var goal := walker._path_goal(Vector3(20, 0, 40))
@@ -149,8 +149,8 @@ func _test_path_goal_reuse() -> void:
 func _test_throttled_cruise() -> void:
 	_section("a throttled NPC keeps walking between thinks")
 
-	var sched := DotNpcAiScheduler.new()
-	var cfg := DotNpcAiSchedulerConfig.new()
+	var sched := GSNpcAiScheduler.new()
+	var cfg := GSNpcAiSchedulerConfig.new()
 	cfg.enabled = true
 	sched.apply_config(cfg)
 	sched.auto_advance = false
@@ -199,7 +199,7 @@ func _test_throttled_cruise() -> void:
 	_check(calls[0] >= 1 and calls[0] <= 2, "a line test is cached for near and refused for tier 3", str(calls[0]))
 
 	stub.free()
-	DotRegistry.unregister(DotNpcAiScheduler.SERVICE)
+	GSRegistry.unregister(GSNpcAiScheduler.SERVICE)
 	_done()
 
 
@@ -207,8 +207,8 @@ class TokenMember extends RefCounted:
 	pass
 
 
-func _token_squad(pool: int, cap: int, seed_value: int = 1) -> DotNpcAiSquad:
-	var squad := DotNpcAiSquad.new(&"t")
+func _token_squad(pool: int, cap: int, seed_value: int = 1) -> GSNpcAiSquad:
+	var squad := GSNpcAiSquad.new(&"t")
 	squad.tokens.enabled = true
 	squad.tokens.pool_size = pool
 	squad.tokens.per_target_cap = cap
@@ -219,7 +219,7 @@ func _token_squad(pool: int, cap: int, seed_value: int = 1) -> DotNpcAiSquad:
 	return squad
 
 
-func _token_members(squad: DotNpcAiSquad, n: int) -> Array:
+func _token_members(squad: GSNpcAiSquad, n: int) -> Array:
 	var out: Array = []
 	for i in n:
 		var m := TokenMember.new()
@@ -262,11 +262,11 @@ func _token_sim(seed_value: int, seconds: float) -> Dictionary:
 func _test_attack_tokens() -> void:
 	_section("attack tokens")
 
-	var off := DotNpcAiSquad.new(&"off")
-	_check(not off.tokens.enabled and DotNpcAiTokenConfig.new().enabled == false, "tokens ship off")
+	var off := GSNpcAiSquad.new(&"off")
+	_check(not off.tokens.enabled and GSNpcAiTokenConfig.new().enabled == false, "tokens ship off")
 	_check(off.describe()["tokens"] == -1, "and describe() says so")
-	_check(DotNpcAiTokenConfig.new().validate().ok, "the default config validates")
-	var bad := DotNpcAiTokenConfig.new()
+	_check(GSNpcAiTokenConfig.new().validate().ok, "the default config validates")
+	var bad := GSNpcAiTokenConfig.new()
 	bad.per_target_cap = bad.pool_size + 1
 	_check(not bad.validate().ok, "a cap above the pool does not")
 
@@ -329,27 +329,27 @@ func _test_attack_tokens() -> void:
 
 	_check(squad.describe_lines().size() == 2 and "tokens" in squad.describe_lines()[1], "describe_lines() reports the pool")
 
-	var cfg := DotNpcAiTokenConfig.new()
-	var behind := DotNpcAiTactics.best_flank(Vector3.ZERO, Vector3(1, 0, 0), Vector3(3, 0, 0), 4.0, [], cfg)
-	_check(DotNpcAiTactics.angle_from_behind(Vector3.ZERO, Vector3(1, 0, 0), behind) < 0.6,
+	var cfg := GSNpcAiTokenConfig.new()
+	var behind := GSNpcAiTactics.best_flank(Vector3.ZERO, Vector3(1, 0, 0), Vector3(3, 0, 0), 4.0, [], cfg)
+	_check(GSNpcAiTactics.angle_from_behind(Vector3.ZERO, Vector3(1, 0, 0), behind) < 0.6,
 		"flanking picks a place behind the target", str(behind))
-	var crowded := DotNpcAiTactics.best_flank(Vector3.ZERO, Vector3(1, 0, 0), Vector3(3, 0, 0), 4.0, [behind], cfg)
+	var crowded := GSNpcAiTactics.best_flank(Vector3.ZERO, Vector3(1, 0, 0), Vector3(3, 0, 0), 4.0, [behind], cfg)
 	_check(crowded.distance_to(behind) >= cfg.flank_ally_radius, "and not the one an ally already holds", str(crowded))
 	_done()
 
 
-func _plain_walker(spawner: DotNpcSpawner, at: Vector3, goal: Vector3) -> DotNpcAiBrain:
-	var brain := spawner.spawn(&"plain", at).brain as DotNpcAiBrain
+func _plain_walker(spawner: GSNpcSpawner, at: Vector3, goal: Vector3) -> GSNpcAiBrain:
+	var brain := spawner.spawn(&"plain", at).brain as GSNpcAiBrain
 	brain.machine = null
-	brain.tree = DotNpcAiLeaf.Action.new(&"go", func(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
+	brain.tree = GSNpcAiLeaf.Action.new(&"go", func(ctx: GSNpcAiContext) -> GSNpcAiNode.Status:
 		brain.steer_toward(goal, 6.0, ctx.delta)
-		return DotNpcAiNode.Status.RUNNING)
+		return GSNpcAiNode.Status.RUNNING)
 	return brain
 
 
-func _sched_on(players: Array = [Vector3.ZERO]) -> DotNpcAiScheduler:
-	var sched := DotNpcAiScheduler.new()
-	var cfg := DotNpcAiSchedulerConfig.new()
+func _sched_on(players: Array = [Vector3.ZERO]) -> GSNpcAiScheduler:
+	var sched := GSNpcAiScheduler.new()
+	var cfg := GSNpcAiSchedulerConfig.new()
 	cfg.enabled = true
 	sched.apply_config(cfg)
 	sched.auto_advance = false
@@ -394,9 +394,9 @@ func _test_scheduler_review_gaps() -> void:
 	for i in 40:
 		sched.advance(1.0 / 60.0)
 		spawner.tick(1.0 / 60.0)
-	halted.tree = DotNpcAiLeaf.Action.new(&"stop", func(_c: DotNpcAiContext) -> DotNpcAiNode.Status:
+	halted.tree = GSNpcAiLeaf.Action.new(&"stop", func(_c: GSNpcAiContext) -> GSNpcAiNode.Status:
 		halted.halt()
-		return DotNpcAiNode.Status.RUNNING)
+		return GSNpcAiNode.Status.RUNNING)
 	for i in 12:
 		sched.advance(1.0 / 60.0)
 		spawner.tick(1.0 / 60.0)
@@ -420,7 +420,7 @@ func _test_scheduler_review_gaps() -> void:
 	_done()
 
 
-func _gaps_paths(sched: DotNpcAiScheduler, stub: StubDirector, spawner: DotNpcSpawner) -> void:
+func _gaps_paths(sched: GSNpcAiScheduler, stub: StubDirector, spawner: GSNpcSpawner) -> void:
 	# Path denial falls back to the last waypoint, never a straight line.
 	var first := _plain_walker(spawner, Vector3(45, 0, 0), Vector3.ZERO)
 	var second := _plain_walker(spawner, Vector3(45, 0, 3), Vector3.ZERO)
@@ -451,7 +451,7 @@ func _gaps_paths(sched: DotNpcAiScheduler, stub: StubDirector, spawner: DotNpcSp
 	_check(stub.path_calls <= 2 and stub.path_calls >= 1, "a path is reused while its destination only drifts", str(stub.path_calls))
 
 
-func _gaps_sight(sched: DotNpcAiScheduler, spawner: DotNpcSpawner) -> Callable:
+func _gaps_sight(sched: GSNpcAiScheduler, spawner: GSNpcSpawner) -> Callable:
 	# Sight tests: cached for a tier that may test, refused (not stale) for one that may not.
 	var calls := [0]
 	var probe := func() -> bool:
@@ -467,16 +467,16 @@ func _gaps_sight(sched: DotNpcAiScheduler, spawner: DotNpcSpawner) -> Callable:
 	return probe
 
 
-func _gaps_late_scheduler(sched: DotNpcAiScheduler, stub: StubDirector, probe: Callable) -> void:
+func _gaps_late_scheduler(sched: GSNpcAiScheduler, stub: StubDirector, probe: Callable) -> void:
 	# A scheduler registered after the brains were bound is found.
-	DotRegistry.unregister(DotNpcAiScheduler.SERVICE)
+	GSRegistry.unregister(GSNpcAiScheduler.SERVICE)
 	sched.free()
 	var late_spawner := _spawner()
 	var orphan := _plain_walker(late_spawner, Vector3(5, 0, 0), Vector3(900, 0, 0))
 	var counted := [0]
-	orphan.tree = DotNpcAiLeaf.Action.new(&"count", func(_c: DotNpcAiContext) -> DotNpcAiNode.Status:
+	orphan.tree = GSNpcAiLeaf.Action.new(&"count", func(_c: GSNpcAiContext) -> GSNpcAiNode.Status:
 		counted[0] += 1
-		return DotNpcAiNode.Status.RUNNING)
+		return GSNpcAiNode.Status.RUNNING)
 	_check(orphan.scheduler == null, "a brain bound with no scheduler has none")
 	var late := _sched_on()
 	for i in 200:
@@ -485,7 +485,7 @@ func _gaps_late_scheduler(sched: DotNpcAiScheduler, stub: StubDirector, probe: C
 	_check(orphan.scheduler == late and late.thinks_of(orphan) > 0, "and finds one registered later", str(late.thinks_of(orphan)))
 
 	# A scheduler freed under the brains costs them nothing but its gating.
-	DotRegistry.unregister(DotNpcAiScheduler.SERVICE)
+	GSRegistry.unregister(GSNpcAiScheduler.SERVICE)
 	late.free()
 	var before_count: int = counted[0]
 	for i in 30:
@@ -539,25 +539,25 @@ func _test_squad_review_gaps() -> void:
 
 	# Tokens switched on while members already hold plain attack slots.
 	var spawner := _spawner()
-	DotNpcAiSquads.new().attach(spawner)
+	GSNpcAiSquads.new().attach(spawner)
 	var a := spawner.spawn(&"soldier", Vector3(0, 0, 0))
 	var b := spawner.spawn(&"soldier", Vector3(3, 0, 0))
-	var ba := a.brain as DotNpcAiBrain
-	var bb := b.brain as DotNpcAiBrain
+	var ba := a.brain as GSNpcAiBrain
+	var bb := b.brain as GSNpcAiBrain
 	a.target_id = &"p"
 	b.target_id = &"p"
-	_check(ba.claim_role(DotNpcAiBrain.ROLE_ATTACK, 2) and bb.claim_role(DotNpcAiBrain.ROLE_ATTACK, 2), "two attack slots are held without tokens")
+	_check(ba.claim_role(GSNpcAiBrain.ROLE_ATTACK, 2) and bb.claim_role(GSNpcAiBrain.ROLE_ATTACK, 2), "two attack slots are held without tokens")
 	ba.squad.tokens.enabled = true
 	ba.squad.tokens.pool_size = 1
 	ba.squad.tokens.per_target_cap = 1
-	var got_a := ba.claim_role(DotNpcAiBrain.ROLE_ATTACK, 2)
-	var got_b := bb.claim_role(DotNpcAiBrain.ROLE_ATTACK, 2)
+	var got_a := ba.claim_role(GSNpcAiBrain.ROLE_ATTACK, 2)
+	var got_b := bb.claim_role(GSNpcAiBrain.ROLE_ATTACK, 2)
 	_check(got_a != got_b, "with one token only one of them still attacks", "%s and %s" % [got_a, got_b])
 	_check(ba.squad.holder_count(&"attack:p") == 1, "and the other's slot is given up with the refusal", str(ba.squad.holder_count(&"attack:p")))
 	_done()
 
 
-## A fake of the one cvar shape [method DotNpcAiSkill.bind_cvars] relies on, so this suite
+## A fake of the one cvar shape [method GSNpcAiSkill.bind_cvars] relies on, so this suite
 ## proves the binding without GameSpice Server — which is not a dependency of this addon.
 class FakeCvar:
 	extends RefCounted
@@ -584,7 +584,7 @@ class FakeCvar:
 	func set_value(text: String) -> bool:
 		if validator.is_valid():
 			var checked: Variant = validator.call(text)
-			if checked is DotResult and not (checked as DotResult).ok:
+			if checked is GSResult and not (checked as GSResult).ok:
 				return false
 		var old := value
 		value = text
@@ -597,23 +597,23 @@ const STEER_BRAIN := "res://addons/dot_npc_ai/runtime/dot_npc_ai_steer_brain.gd"
 
 
 ## The steer brain's gather/decide/apply split: a hash of 2000 ticks of a crowd that wanders, then chases, with decide inline twice
-## and on two workers under DotParallel.verify.
+## and on two workers under GSParallel.verify.
 func _test_steer_brain_split() -> void:
 	_section("steer brain split think")
 
-	var verify_before := DotParallel.verify
-	DotParallel.verify = true
-	var failures_before := DotParallel.verify_failures
+	var verify_before := GSParallel.verify
+	GSParallel.verify = true
+	var failures_before := GSParallel.verify_failures
 	var off := _steer_run(0)
 	var off_again := _steer_run(0)
 	var on := _steer_run(2)
-	DotParallel.verify = verify_before
+	GSParallel.verify = verify_before
 
 	_check(off[1] > 0 and off[2] > 1, "the crowd moved and the hash covers distinct places", "%s" % [off])
 	_check(off[0] == off_again[0], "off against off: the same hash of 2000 ticks", "%d vs %d" % [off[0], off_again[0]])
 	_check(on[0] == off[0], "workers 2 against off: the same hash",
-		"%d vs %d%s" % [on[0], off[0], "" if DotParallel.resolve_workers(2) > 0 else " (no threads here: inline)"])
-	_check(DotParallel.verify_failures == failures_before, "and verify found no task that differs between runs")
+		"%d vs %d%s" % [on[0], off[0], "" if GSParallel.resolve_workers(2) > 0 else " (no threads here: inline)"])
+	_check(GSParallel.verify_failures == failures_before, "and verify found no task that differs between runs")
 	_done()
 
 
@@ -622,7 +622,7 @@ func _steer_run(workers: int) -> Array:
 	var spawner := _spawner()
 	spawner.limits.world_budget = 0
 	spawner.limits.per_kind_cap = 0
-	var def := DotNpcDef.make(&"crowd", BODY)
+	var def := GSNpcDef.make(&"crowd", BODY)
 	def.brain_script_path = STEER_BRAIN
 	def.require_line_of_sight = false
 	def.sight_half_angle_deg = 180.0
@@ -639,7 +639,7 @@ func _steer_run(workers: int) -> Array:
 
 	for t in STEER_TICKS:
 		if t == 1000:
-			spawner.set_candidates([DotNpcSenses.Candidate.new(&"player", Vector3(0, 0, -20), &"player")])
+			spawner.set_candidates([GSNpcSenses.Candidate.new(&"player", Vector3(0, 0, -20), &"player")])
 		spawner.tick(1.0 / 60.0)
 
 	var h := 0

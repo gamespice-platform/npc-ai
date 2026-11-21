@@ -1,31 +1,31 @@
-class_name DotNpcAiDecorator
-extends DotNpcAiNode
+class_name GSNpcAiDecorator
+extends GSNpcAiNode
 
 ## A node with exactly one child, which changes what that child means.
 ## The base for the small set below, each about three lines; written into a leaf instead, the same three lines make a tree unreadable.
 
-var child: DotNpcAiNode = null
+var child: GSNpcAiNode = null
 
 
-func _init(p_name: StringName = &"", p_child: DotNpcAiNode = null) -> void:
+func _init(p_name: StringName = &"", p_child: GSNpcAiNode = null) -> void:
 	super(p_name)
 	child = p_child
 
 
-func children() -> Array[DotNpcAiNode]:
+func children() -> Array[GSNpcAiNode]:
 	return [child] if child != null else []
 
 
-func _abort(ctx: DotNpcAiContext) -> void:
+func _abort(ctx: GSNpcAiContext) -> void:
 	if child != null and child.is_running:
 		child.abort(ctx)
 
 
 ## SUCCESS becomes FAILURE and back. RUNNING is untouched.
 class Inverter:
-	extends DotNpcAiDecorator
+	extends GSNpcAiDecorator
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		if child == null:
 			return Status.FAILURE
 
@@ -41,9 +41,9 @@ class Inverter:
 ## Always SUCCESS once the child finishes, whatever it finished with.
 ## For a sequence step that may fail; without it "try this, and carry on either way" is a selector with a stub in it.
 class Succeeder:
-	extends DotNpcAiDecorator
+	extends GSNpcAiDecorator
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		if child == null:
 			return Status.SUCCESS
 
@@ -55,7 +55,7 @@ class Succeeder:
 ## Refuses to run its child again for [member cooldown] seconds after it finishes.
 ## Starts when the child FINISHES: from its start, a long action with a short cooldown re-enters before it ends (a machine gun). Simulated seconds, never a wall clock.
 class Cooldown:
-	extends DotNpcAiDecorator
+	extends GSNpcAiDecorator
 
 	var cooldown: float = 1.0
 
@@ -63,7 +63,7 @@ class Cooldown:
 	var _last_finished: float = -1000000.0
 
 	func _init(
-		p_name: StringName = &"", p_child: DotNpcAiNode = null, p_cooldown: float = 1.0
+		p_name: StringName = &"", p_child: GSNpcAiNode = null, p_cooldown: float = 1.0
 	) -> void:
 		super(p_name, p_child)
 		cooldown = p_cooldown
@@ -71,7 +71,7 @@ class Cooldown:
 	func is_ready(now: float) -> bool:
 		return now - _last_finished >= cooldown
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		if child == null:
 			return Status.FAILURE
 
@@ -89,22 +89,22 @@ class Cooldown:
 ## Runs its child up to [member times], failing when the child fails. 0 is for ever.
 ## Counts child runs that FINISHED, not its own ticks: counting ticks would make every frame of a walk a repetition.
 class Repeat:
-	extends DotNpcAiDecorator
+	extends GSNpcAiDecorator
 
 	var times: int = 0
 
 	var _done: int = 0
 
 	func _init(
-		p_name: StringName = &"", p_child: DotNpcAiNode = null, p_times: int = 0
+		p_name: StringName = &"", p_child: GSNpcAiNode = null, p_times: int = 0
 	) -> void:
 		super(p_name, p_child)
 		times = p_times
 
-	func _enter(_ctx: DotNpcAiContext) -> void:
+	func _enter(_ctx: GSNpcAiContext) -> void:
 		_done = 0
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		if child == null:
 			return Status.FAILURE
 
@@ -129,7 +129,7 @@ class Repeat:
 
 ## RUNNING until [member seconds] have passed, then SUCCESS. The delay every tree needs.
 class Wait:
-	extends DotNpcAiNode
+	extends GSNpcAiNode
 
 	var seconds: float = 1.0
 
@@ -139,19 +139,19 @@ class Wait:
 		super(p_name)
 		seconds = p_seconds
 
-	func _enter(ctx: DotNpcAiContext) -> void:
+	func _enter(ctx: GSNpcAiContext) -> void:
 		_started_at = ctx.now
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		return Status.SUCCESS if ctx.now - _started_at >= seconds else Status.RUNNING
 
 
 ## Always FAILURE once the child finishes. The mirror of [Succeeder].
 ## For a selector branch that must never be chosen: a probe that runs for its side effect and hands control to the branch below.
 class Failer:
-	extends DotNpcAiDecorator
+	extends GSNpcAiDecorator
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		if child == null:
 			return Status.FAILURE
 
@@ -163,22 +163,22 @@ class Failer:
 ## Abandons a child that has been RUNNING for longer than [member seconds] (simulated).
 ## Every RUNNING action can get stuck (a closed door, a teleported target, a corner), and without a limit "the zombie in the corner" is the bug report. The child is aborted so whatever it reserved is let go, and the selector above moves on.
 class TimeLimit:
-	extends DotNpcAiDecorator
+	extends GSNpcAiDecorator
 
 	var seconds: float = 5.0
 
 	var _started_at: float = 0.0
 
 	func _init(
-		p_name: StringName = &"", p_child: DotNpcAiNode = null, p_seconds: float = 5.0
+		p_name: StringName = &"", p_child: GSNpcAiNode = null, p_seconds: float = 5.0
 	) -> void:
 		super(p_name, p_child)
 		seconds = p_seconds
 
-	func _enter(ctx: DotNpcAiContext) -> void:
+	func _enter(ctx: GSNpcAiContext) -> void:
 		_started_at = ctx.now
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		if child == null:
 			return Status.FAILURE
 
@@ -197,14 +197,14 @@ class TimeLimit:
 ## Lets its child run at most [member times] times, ever. FAILURE afterwards.
 ## Counted for the life of the node, not per entry, which is what "at most once" means (a greeting, a door opened once). [method reset] is for a game reusing a tree across rounds, since rebuilding loses every running state.
 class Limit:
-	extends DotNpcAiDecorator
+	extends GSNpcAiDecorator
 
 	var times: int = 1
 
 	var _used: int = 0
 
 	func _init(
-		p_name: StringName = &"", p_child: DotNpcAiNode = null, p_times: int = 1
+		p_name: StringName = &"", p_child: GSNpcAiNode = null, p_times: int = 1
 	) -> void:
 		super(p_name, p_child)
 		times = p_times
@@ -215,7 +215,7 @@ class Limit:
 	func reset() -> void:
 		_used = 0
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		if child == null:
 			return Status.FAILURE
 
@@ -236,9 +236,9 @@ class Limit:
 ## Runs its child over and over until it fails, then SUCCESS. The loop a patrol is written with.
 ## One repetition per tick for [Repeat]'s reason: a real loop never returns when the child succeeds without suspending.
 class UntilFail:
-	extends DotNpcAiDecorator
+	extends GSNpcAiDecorator
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		if child == null:
 			return Status.SUCCESS
 
@@ -254,7 +254,7 @@ class UntilFail:
 ## Reproducible, not random: the roll hashes the context's tick index and this node's salt, so a replay and a server rewind agree where [method randf] would diverge after ninety seconds.
 ## Rolled on entry only, so a RUNNING child is not re-rolled out of existence next tick.
 class RandomChance:
-	extends DotNpcAiDecorator
+	extends GSNpcAiDecorator
 
 	var chance: float = 0.5
 
@@ -265,7 +265,7 @@ class RandomChance:
 
 	func _init(
 		p_name: StringName = &"",
-		p_child: DotNpcAiNode = null,
+		p_child: GSNpcAiNode = null,
 		p_chance: float = 0.5,
 		p_salt: int = 0
 	) -> void:
@@ -273,11 +273,11 @@ class RandomChance:
 		chance = p_chance
 		salt = p_salt
 
-	func _enter(ctx: DotNpcAiContext) -> void:
-		var roll := DotNpcAiNode.deterministic_unit(ctx.tick_index, salt)
+	func _enter(ctx: GSNpcAiContext) -> void:
+		var roll := GSNpcAiNode.deterministic_unit(ctx.tick_index, salt)
 		_rolled = roll < chance
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		if child == null or not _rolled:
 			return Status.FAILURE
 
@@ -288,7 +288,7 @@ class RandomChance:
 ## Without it only a reactive guard ABOVE the action can stop it, putting every interrupt in one unreadable place.
 ## Checked BEFORE the child ticks, so it takes no extra step toward the grenade that just landed; fails, so the selector above moves on.
 class Interrupt:
-	extends DotNpcAiDecorator
+	extends GSNpcAiDecorator
 
 	var mask: int = 0
 
@@ -300,14 +300,14 @@ class Interrupt:
 	var interrupt_count: int = 0
 
 	func _init(
-		p_name: StringName = &"", p_child: DotNpcAiNode = null, p_mask: int = 0,
+		p_name: StringName = &"", p_child: GSNpcAiNode = null, p_mask: int = 0,
 		p_only_new: bool = false
 	) -> void:
 		super(p_name, p_child)
 		mask = p_mask
 		only_new = p_only_new
 
-	func _tick(ctx: DotNpcAiContext) -> Status:
+	func _tick(ctx: GSNpcAiContext) -> Status:
 		if child == null:
 			return Status.FAILURE
 

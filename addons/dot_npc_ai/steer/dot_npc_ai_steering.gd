@@ -1,4 +1,4 @@
-class_name DotNpcAiSteering
+class_name GSNpcAiSteering
 extends RefCounted
 
 ## The steering an NPC needs once ninety of them path to the same door: the gap GameSpice NPC's docs/navigation.md names, since separation is a behaviour, not a fact about the world. Without it a horde is one stack of bodies (and on rigid bodies a solver pushing them apart all tick).
@@ -34,7 +34,7 @@ static func arrive(from: Vector3, goal: Vector3, radius: float) -> Vector3:
 
 
 ## Away from anything within [param radius], weighted by 1/distance: linear weighting pushes a near-touching body no harder than one two metres off, so a crowd spreads evenly and still overlaps. [param others] is [Vector3] positions, not NPCs.
-## [b][param tie_break] separates a STACK:[/b] one NPC directly above another has no horizontal offset, so the push is zero and they stay stacked. A caller passes its own direction ([DotNpcAiBrain] passes the NPC's right, which differs per NPC) and a degenerate pair is shoved along it.
+## [b][param tie_break] separates a STACK:[/b] one NPC directly above another has no horizontal offset, so the push is zero and they stay stacked. A caller passes its own direction ([GSNpcAiBrain] passes the NPC's right, which differs per NPC) and a degenerate pair is shoved along it.
 static func separate(
 	from: Vector3, others: Array, radius: float, tie_break: Vector3 = Vector3.ZERO
 ) -> Vector3:

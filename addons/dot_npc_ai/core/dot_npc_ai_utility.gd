@@ -1,4 +1,4 @@
-class_name DotNpcAiUtility
+class_name GSNpcAiUtility
 extends RefCounted
 
 ## Scores candidate actions from response curves and picks one, holding it against flapping. Costs only when asked.
@@ -9,7 +9,7 @@ const CHANNEL := "npc.ai.utility"
 class Consideration:
 	extends RefCounted
 	var key: StringName
-	var curve: DotNpcAiCurve
+	var curve: GSNpcAiCurve
 	var weight: float = 1.0
 
 
@@ -21,7 +21,7 @@ class Action:
 	var considerations: Array[Consideration] = []
 
 	## Adds an input scored through [param curve]; returns self to chain.
-	func consider(key: StringName, curve: DotNpcAiCurve, p_weight: float = 1.0) -> Action:
+	func consider(key: StringName, curve: GSNpcAiCurve, p_weight: float = 1.0) -> Action:
 		var c := Consideration.new()
 		c.key = key
 		c.curve = curve
@@ -30,8 +30,8 @@ class Action:
 		return self
 
 
-var config: DotNpcAiUtilityConfig = DotNpcAiUtilityConfig.new()
-var personality: DotNpcAiPersonality = null
+var config: GSNpcAiUtilityConfig = GSNpcAiUtilityConfig.new()
+var personality: GSNpcAiPersonality = null
 ## Seeds the personality's wobble; the NPC's seed.
 var npc_seed: int = 0
 ## `func(key: StringName) -> float`: the raw reading of a consideration. Called once per key per evaluation, and only for keys an action uses.
@@ -89,7 +89,7 @@ func choose(now: float, p_inputs: Callable = Callable()) -> StringName:
 	if best != current and current != &"" and held_score > 0.0 and now - _since < config.min_hold_s:
 		return current
 	if best != current:
-		DotLog.debug(CHANNEL, "action changed", {"from": String(current), "to": String(best)})
+		GSLog.debug(CHANNEL, "action changed", {"from": String(current), "to": String(best)})
 		current = best
 		_since = now
 	return current

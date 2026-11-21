@@ -4,14 +4,14 @@ extends "res://examples/selftest/character_tests.gd"
 
 
 class Endless:
-	extends DotNpcAiNode
+	extends GSNpcAiNode
 
 	var aborted := 0
 
-	func _tick(_ctx: DotNpcAiContext) -> Status:
+	func _tick(_ctx: GSNpcAiContext) -> Status:
 		return Status.RUNNING
 
-	func _abort(_ctx: DotNpcAiContext) -> void:
+	func _abort(_ctx: GSNpcAiContext) -> void:
 		aborted += 1
 
 
@@ -29,46 +29,46 @@ class FakeMember:
 func _test_conditions() -> void:
 	_section("conditions, and the interrupt that reads them")
 
-	var c := DotNpcAiConditions.new()
-	c.set_flag(DotNpcAiConditions.SEE_ENEMY | DotNpcAiConditions.LIGHT_DAMAGE)
-	_check(c.has(DotNpcAiConditions.SEE_ENEMY), "a condition set is a condition had")
+	var c := GSNpcAiConditions.new()
+	c.set_flag(GSNpcAiConditions.SEE_ENEMY | GSNpcAiConditions.LIGHT_DAMAGE)
+	_check(c.has(GSNpcAiConditions.SEE_ENEMY), "a condition set is a condition had")
 	_check(
-		c.has(DotNpcAiConditions.HEAR_DANGER | DotNpcAiConditions.LIGHT_DAMAGE)
-			and not c.has_all(DotNpcAiConditions.HEAR_DANGER | DotNpcAiConditions.LIGHT_DAMAGE),
+		c.has(GSNpcAiConditions.HEAR_DANGER | GSNpcAiConditions.LIGHT_DAMAGE)
+			and not c.has_all(GSNpcAiConditions.HEAR_DANGER | GSNpcAiConditions.LIGHT_DAMAGE),
 		"has is any of them, has_all is all of them"
 	)
-	_check(c.became(DotNpcAiConditions.SEE_ENEMY), "and it became true this tick")
+	_check(c.became(GSNpcAiConditions.SEE_ENEMY), "and it became true this tick")
 
 	c.begin_tick()
-	_check(not c.has(DotNpcAiConditions.SEE_ENEMY), "a new tick starts with nothing")
-	c.set_flag(DotNpcAiConditions.SEE_ENEMY)
+	_check(not c.has(GSNpcAiConditions.SEE_ENEMY), "a new tick starts with nothing")
+	c.set_flag(GSNpcAiConditions.SEE_ENEMY)
 	_check(
-		c.has(DotNpcAiConditions.SEE_ENEMY) and not c.became(DotNpcAiConditions.SEE_ENEMY),
+		c.has(GSNpcAiConditions.SEE_ENEMY) and not c.became(GSNpcAiConditions.SEE_ENEMY),
 		"and one still true is had, but did not become"
 	)
 
 	var ctx := _context()
 	var endless := Endless.new(&"walk")
-	var guard := DotNpcAiDecorator.Interrupt.new(&"until danger", endless, DotNpcAiConditions.HEAR_DANGER)
+	var guard := GSNpcAiDecorator.Interrupt.new(&"until danger", endless, GSNpcAiConditions.HEAR_DANGER)
 
-	_check(guard.tick(ctx) == DotNpcAiNode.Status.RUNNING, "an interrupt runs its child")
+	_check(guard.tick(ctx) == GSNpcAiNode.Status.RUNNING, "an interrupt runs its child")
 	_check(endless.is_running, "which is running")
 
 	ctx.conditions.begin_tick()
-	ctx.conditions.set_flag(DotNpcAiConditions.HEAR_DANGER)
-	_check(guard.tick(ctx) == DotNpcAiNode.Status.FAILURE, "until the condition appears, when it fails")
+	ctx.conditions.set_flag(GSNpcAiConditions.HEAR_DANGER)
+	_check(guard.tick(ctx) == GSNpcAiNode.Status.FAILURE, "until the condition appears, when it fails")
 	_check(endless.aborted == 1 and not endless.is_running, "and the child is told it was stopped")
 
 	var flinch := Endless.new(&"flinch")
-	var on_new := DotNpcAiDecorator.Interrupt.new(
-		&"flinch", flinch, DotNpcAiConditions.LIGHT_DAMAGE, true
+	var on_new := GSNpcAiDecorator.Interrupt.new(
+		&"flinch", flinch, GSNpcAiConditions.LIGHT_DAMAGE, true
 	)
 	ctx.conditions.begin_tick()
-	ctx.conditions.set_flag(DotNpcAiConditions.LIGHT_DAMAGE)
+	ctx.conditions.set_flag(GSNpcAiConditions.LIGHT_DAMAGE)
 	ctx.conditions.begin_tick()
-	ctx.conditions.set_flag(DotNpcAiConditions.LIGHT_DAMAGE)
+	ctx.conditions.set_flag(GSNpcAiConditions.LIGHT_DAMAGE)
 	_check(
-		on_new.tick(ctx) == DotNpcAiNode.Status.RUNNING,
+		on_new.tick(ctx) == GSNpcAiNode.Status.RUNNING,
 		"only_new ignores a condition that was already true",
 		"a flinch must not be interrupted by the damage it is reacting to"
 	)
@@ -78,7 +78,7 @@ func _test_conditions() -> void:
 func _test_memory() -> void:
 	_section("memory of enemies")
 
-	var m := DotNpcAiMemory.new()
+	var m := GSNpcAiMemory.new()
 	m.forget_after = 5.0
 
 	m.sighted(&"a", Vector3(0, 0, 0), 0.0)
@@ -121,14 +121,14 @@ func _test_memory() -> void:
 	m.hurt_by(&"c", Vector3(-4, 0, 0), 12.0, 0.7)
 	_check(
 		m.get_entry(&"c", 0.7).hurt_me == 12.0
-			and m.get_entry(&"c", 0.7).source == DotNpcAiMemory.Source.DAMAGE,
+			and m.get_entry(&"c", 0.7).source == GSNpcAiMemory.Source.DAMAGE,
 		"being hurt is remembered, with how much"
 	)
 
 	_check(m.get_entry(&"a", 6.0) == null, "and everything is forgotten after forget_after")
 	_check(m.size() == 2, "on read, not in a sweep", "%d left" % m.size())
 
-	var never := DotNpcAiMemory.new()
+	var never := GSNpcAiMemory.new()
 	never.forget_after = 0.0
 	never.sighted(&"x", Vector3.ZERO, 1.0)
 	_check(never.get_entry(&"x", 1.0) == null, "a memory of zero remembers nothing, not everything")
@@ -138,8 +138,8 @@ func _test_memory() -> void:
 func _test_sounds() -> void:
 	_section("sounds")
 
-	var board := DotNpcAiSounds.new()
-	var shot := board.emit(DotNpcAiSounds.Kind.COMBAT, Vector3(10, 0, 0), 20.0, 1.0, 0.5, &"p1")
+	var board := GSNpcAiSounds.new()
+	var shot := board.emit(GSNpcAiSounds.Kind.COMBAT, Vector3(10, 0, 0), 20.0, 1.0, 0.5, &"p1")
 
 	_check(board.audible(Vector3.ZERO, 1.0).size() == 1, "a shot is heard inside its radius")
 	_check(board.audible(Vector3(40, 0, 0), 1.0).size() == 0, "and not outside it")
@@ -151,16 +151,16 @@ func _test_sounds() -> void:
 	_check(board.audible(Vector3.ZERO, 1.0, 1.0, shot).is_empty(), "a sound already heard is not heard again")
 	_check(board.audible(Vector3.ZERO, 2.0).is_empty(), "and one that has passed is not heard at all")
 
-	var grenade := board.emit(DotNpcAiSounds.Kind.DANGER, Vector3.ZERO, 15.0, 2.0, 3.0, &"", 4.0)
+	var grenade := board.emit(GSNpcAiSounds.Kind.DANGER, Vector3.ZERO, 15.0, 2.0, 3.0, &"", 4.0)
 	var found := board.audible(Vector3(10, 0, 0), 2.0, 1.0, shot)
 	_check(
 		found.size() == 1 and found[0].id == grenade and found[0].extent == 4.0,
 		"a danger carries how far it reaches as well as how far it is heard"
 	)
 
-	for i in DotNpcAiSounds.CAPACITY + 20:
-		board.emit(DotNpcAiSounds.Kind.WORLD, Vector3.ZERO, 1.0, 2.0, 60.0)
-	_check(board.size() <= DotNpcAiSounds.CAPACITY, "the list is bounded",
+	for i in GSNpcAiSounds.CAPACITY + 20:
+		board.emit(GSNpcAiSounds.Kind.WORLD, Vector3.ZERO, 1.0, 2.0, 60.0)
+	_check(board.size() <= GSNpcAiSounds.CAPACITY, "the list is bounded",
 		"%d kept" % board.size())
 	_done()
 
@@ -168,7 +168,7 @@ func _test_sounds() -> void:
 func _test_squad() -> void:
 	_section("squads and slots")
 
-	var squad := DotNpcAiSquad.new(&"alpha")
+	var squad := GSNpcAiSquad.new(&"alpha")
 	var a := FakeMember.new()
 	var b := FakeMember.new()
 	var c := FakeMember.new()
@@ -189,7 +189,7 @@ func _test_squad() -> void:
 		"a report reaches every other member and not the one who made it")
 
 	# Pull: reports are logged, and a member reads the newest per enemy when it thinks.
-	var pulled := DotNpcAiSquad.new(&"pull")
+	var pulled := GSNpcAiSquad.new(&"pull")
 	pulled.pull_reports = true
 	var p1 := FakeMember.new()
 	var p2 := FakeMember.new()
@@ -204,7 +204,7 @@ func _test_squad() -> void:
 	_check(p2.reports.size() == 1 and p2.reports[0][1] == Vector3(2, 0, 0),
 		"a pull delivers only the newest report per enemy, never the member's own", str(p2.reports))
 	_check(pulled.pull(p2, next) == next and p2.reports.size() == 1, "and nothing twice")
-	for i in DotNpcAiSquad.LOG_KEEP * 3:
+	for i in GSNpcAiSquad.LOG_KEEP * 3:
 		pulled.report(p1, StringName("e%d" % (i % 5)), Vector3(i, 0, 0), Vector3.ZERO, 3.0 + i)
 	p2.reports.clear()
 	pulled.pull(p2, 0)
@@ -217,7 +217,7 @@ func _test_squad() -> void:
 
 
 func _squad_reports() -> void:
-	var crowd := DotNpcAiSquad.new(&"crowd")
+	var crowd := GSNpcAiSquad.new(&"crowd")
 	crowd.pull_reports = true
 	var maker := FakeMember.new()
 	var reader := FakeMember.new()
@@ -257,7 +257,7 @@ func _squad_reports() -> void:
 	print("squad pull, 6 pulls over 100 enemies: %d us" % spent)
 
 	# A member freed without leaving — which is how a world ends — must not keep its slot.
-	var squad2 := DotNpcAiSquad.new(&"beta")
+	var squad2 := GSNpcAiSquad.new(&"beta")
 	var keep := FakeMember.new()
 	squad2.join(keep)
 	var gone := FakeMember.new()
@@ -274,7 +274,7 @@ func _squad_reports() -> void:
 		"a squad's memo answers for one clock reading and forgets at the next")
 	_check(squad2.holder_ids(&"attack:p").size() == 1, "holder_ids lists who holds a slot")
 
-	var registry := DotNpcAiSquads.new()
+	var registry := GSNpcAiSquads.new()
 	_check(registry.squad(&"x") == registry.squad(&"x"), "one name is one squad")
 	_check(registry.prune() == 1, "and an empty one is pruned")
 
@@ -283,17 +283,17 @@ func _test_tactics() -> void:
 	_section("tactics")
 
 	var center := Vector3.ZERO
-	var point := DotNpcAiTactics.ring_point(center, Vector3(10, 0, 0), 4.0)
+	var point := GSNpcAiTactics.ring_point(center, Vector3(10, 0, 0), 4.0)
 	_check(point.distance_to(Vector3(4, 0, 0)) < 0.01, "a ring point holds the NPC's own bearing")
 
 	# The enemy faces +X, so behind it is -X. An NPC beside it works round, a step at a time.
 	var at := Vector3(0, 0, 4)
-	var start := DotNpcAiTactics.angle_from_behind(center, Vector3(1, 0, 0), at)
+	var start := GSNpcAiTactics.angle_from_behind(center, Vector3(1, 0, 0), at)
 
 	for i in 30:
-		at = DotNpcAiTactics.ring_point(center, at, 4.0, Vector3(1, 0, 0), 0.1)
+		at = GSNpcAiTactics.ring_point(center, at, 4.0, Vector3(1, 0, 0), 0.1)
 
-	var finish := DotNpcAiTactics.angle_from_behind(center, Vector3(1, 0, 0), at)
+	var finish := GSNpcAiTactics.angle_from_behind(center, Vector3(1, 0, 0), at)
 	_check(finish < start and finish < 0.05, "flanking works round to the back",
 		"%.2f rad from behind, from %.2f" % [finish, start])
 	_check(absf(at.length() - 4.0) < 0.01, "and stays on the ring")
@@ -301,7 +301,7 @@ func _test_tactics() -> void:
 	# Shared out in the order they stand: whoever is furthest round one way gets the place
 	# furthest round that way, so no two cross to reach theirs.
 	var standing := [Vector3(0, 0, 5), Vector3(5, 0, 0), Vector3(0, 0, -5)]
-	var shared := DotNpcAiTactics.spread_bearings(Vector3.ZERO, 0.0, standing, 0.5)
+	var shared := GSNpcAiTactics.spread_bearings(Vector3.ZERO, 0.0, standing, 0.5)
 	_check(
 		shared[2] < shared[1] and shared[1] < shared[0]
 			and is_equal_approx(shared[0] - shared[1], 0.5),
@@ -311,11 +311,11 @@ func _test_tactics() -> void:
 
 	var spots := PackedVector3Array([Vector3(1, 0, 0), Vector3(5, 0, 0), Vector3(3, 0, 0)])
 	_check(
-		DotNpcAiTactics.best_of(spots, func(p: Vector3, _i: int) -> float: return p.x) == 1,
+		GSNpcAiTactics.best_of(spots, func(p: Vector3, _i: int) -> float: return p.x) == 1,
 		"the best of a set is the highest score"
 	)
 	_check(
-		DotNpcAiTactics.best_of(spots, func(_p: Vector3, _i: int) -> float: return -INF) == -1,
+		GSNpcAiTactics.best_of(spots, func(_p: Vector3, _i: int) -> float: return -INF) == -1,
 		"and a set where everything is ruled out has none"
 	)
 	_done()

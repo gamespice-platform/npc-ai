@@ -1,9 +1,9 @@
-class_name DotNpcAiSounds
+class_name GSNpcAiSounds
 extends RefCounted
 
 ## Noises an NPC can hear: gunfire, footsteps, an explosion, a grenade landing. GameSpice NPC's senses take a loudness per candidate and cannot say "somebody fired over there"; this is the world list of sounds (kind, place, radius, owner) every NPC listens to on its think.
 ## A game emits ([method emit]); brains listen, scaled by alertness. Events, not states: a brain hears each sound once, by id, so a half-second gunshot is not heard thirty times and an old sound is not heard on walking into its radius.
-## One per world, on the director as metadata like [DotNpcAiSkill]: two servers in one process must not hear each other.
+## One per world, on the director as metadata like [GSNpcAiSkill]: two servers in one process must not hear each other.
 
 # No log channel: written by every shot and read by every NPC's think.
 
@@ -55,7 +55,7 @@ var _next_id: int = 1
 
 
 ## Makes a noise. Returns its id.
-## [param now] is the director's clock (`DotNpcSpawner.now()`) so expiry agrees with the listeners. [param duration] is how long it stays on the list for a brain that has not thought yet, not how long anybody hears it.
+## [param now] is the director's clock (`GSNpcSpawner.now()`) so expiry agrees with the listeners. [param duration] is how long it stays on the list for a brain that has not thought yet, not how long anybody hears it.
 func emit(
 	kind: Kind,
 	position: Vector3,
@@ -155,11 +155,11 @@ func attach(director: Node) -> void:
 		director.set_meta(META, self)
 
 
-static func of(director: Object) -> DotNpcAiSounds:
+static func of(director: Object) -> GSNpcAiSounds:
 	if director == null or not director.has_meta(META):
 		return null
 
-	return director.get_meta(META) as DotNpcAiSounds
+	return director.get_meta(META) as GSNpcAiSounds
 
 
 func describe_lines(now: float) -> PackedStringArray:

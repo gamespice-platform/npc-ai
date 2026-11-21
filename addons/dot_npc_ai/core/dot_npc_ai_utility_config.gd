@@ -1,7 +1,7 @@
-class_name DotNpcAiUtilityConfig
-extends DotConfig
+class_name GSNpcAiUtilityConfig
+extends GSConfig
 
-## Every number of utility scoring and how personalities are handed out. Layered like any DotConfig.
+## Every number of utility scoring and how personalities are handed out. Layered like any GSConfig.
 
 ## Off by default: with it off a brain keeps the tree and machine it always had and scores nothing.
 @export var enabled: bool = false
@@ -33,28 +33,28 @@ func cli_prefix() -> String:
 	return "--npc-ai-utility-"
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if not ["none", "random", "role"].has(assignment):
-		return DotResult.fail(DotError.CODE_INVALID, "assignment must be none, random or role")
+		return GSResult.fail(GSError.CODE_INVALID, "assignment must be none, random or role")
 	for k in personalities:
-		var r := DotNpcAiPersonality.from_dictionary(personalities[k], StringName(str(k)))
+		var r := GSNpcAiPersonality.from_dictionary(personalities[k], StringName(str(k)))
 		if not r.ok:
 			return r.wrap("personality '%s'" % str(k))
-	return DotResult.success(null)
+	return GSResult.success(null)
 
 
 ## Every personality by id: the built-ins with the custom ones over them.
 func all_personalities() -> Dictionary:
-	var out := DotNpcAiPersonality.builtin()
+	var out := GSNpcAiPersonality.builtin()
 	for k in personalities:
-		var r := DotNpcAiPersonality.from_dictionary(personalities[k], StringName(str(k)))
+		var r := GSNpcAiPersonality.from_dictionary(personalities[k], StringName(str(k)))
 		if r.ok:
 			out[StringName(str(k))] = r.value
 	return out
 
 
 ## The personality for an NPC with [param npc_seed] and [param role], or null for none.
-func personality_for(npc_seed: int, role: StringName = &"") -> DotNpcAiPersonality:
+func personality_for(npc_seed: int, role: StringName = &"") -> GSNpcAiPersonality:
 	var all := all_personalities()
 	match assignment:
 		"role":

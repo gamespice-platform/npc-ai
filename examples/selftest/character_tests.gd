@@ -9,30 +9,30 @@ func _test_more_decorators() -> void:
 
 	var ctx := _context()
 
-	var failer := DotNpcAiDecorator.Failer.new(
+	var failer := GSNpcAiDecorator.Failer.new(
 		&"failer",
-		DotNpcAiLeaf.Condition.new(&"yes", func(_c: DotNpcAiContext) -> bool: return true)
+		GSNpcAiLeaf.Condition.new(&"yes", func(_c: GSNpcAiContext) -> bool: return true)
 	)
 	_check(
-		failer.tick(ctx) == DotNpcAiNode.Status.FAILURE,
+		failer.tick(ctx) == GSNpcAiNode.Status.FAILURE,
 		"a Failer turns a success into a failure"
 	)
 
 	# A stuck action: RUNNING for ever. Without a time limit this is the zombie in the
 	# corner that nobody can explain.
 	var aborts := []
-	var stuck := DotNpcAiLeaf.Action.new(&"stuck", func(_c: DotNpcAiContext) -> int:
-		return DotNpcAiNode.Status.RUNNING)
-	stuck.on_abort = func(_c: DotNpcAiContext) -> void: aborts.append("aborted")
+	var stuck := GSNpcAiLeaf.Action.new(&"stuck", func(_c: GSNpcAiContext) -> int:
+		return GSNpcAiNode.Status.RUNNING)
+	stuck.on_abort = func(_c: GSNpcAiContext) -> void: aborts.append("aborted")
 
-	var limited := DotNpcAiDecorator.TimeLimit.new(&"limit", stuck, 1.0)
+	var limited := GSNpcAiDecorator.TimeLimit.new(&"limit", stuck, 1.0)
 
 	ctx.advance(0.1)
-	_check(limited.tick(ctx) == DotNpcAiNode.Status.RUNNING, "a time limit lets it run")
+	_check(limited.tick(ctx) == GSNpcAiNode.Status.RUNNING, "a time limit lets it run")
 
 	ctx.advance(1.5)
 	_check(
-		limited.tick(ctx) == DotNpcAiNode.Status.FAILURE,
+		limited.tick(ctx) == GSNpcAiNode.Status.FAILURE,
 		"and fails it once it has taken too long"
 	)
 	_check(
@@ -41,33 +41,33 @@ func _test_more_decorators() -> void:
 	)
 
 	var runs := []
-	var once := DotNpcAiDecorator.Limit.new(
+	var once := GSNpcAiDecorator.Limit.new(
 		&"once",
-		DotNpcAiLeaf.Action.new(&"greet", func(_c: DotNpcAiContext) -> bool:
+		GSNpcAiLeaf.Action.new(&"greet", func(_c: GSNpcAiContext) -> bool:
 			runs.append("hello")
 			return true),
 		1
 	)
 
-	_check(once.tick(ctx) == DotNpcAiNode.Status.SUCCESS, "a Limit runs its child")
-	_check(once.tick(ctx) == DotNpcAiNode.Status.FAILURE, "and not a second time")
+	_check(once.tick(ctx) == GSNpcAiNode.Status.SUCCESS, "a Limit runs its child")
+	_check(once.tick(ctx) == GSNpcAiNode.Status.FAILURE, "and not a second time")
 	_check(runs.size() == 1, "so the child ran exactly once")
 
 	once.reset()
-	_check(once.tick(ctx) == DotNpcAiNode.Status.SUCCESS, "and a reset gives it back")
+	_check(once.tick(ctx) == GSNpcAiNode.Status.SUCCESS, "and a reset gives it back")
 
 	var laps := []
-	var patrol := DotNpcAiDecorator.UntilFail.new(
+	var patrol := GSNpcAiDecorator.UntilFail.new(
 		&"patrol",
-		DotNpcAiLeaf.Action.new(&"step", func(_c: DotNpcAiContext) -> bool:
+		GSNpcAiLeaf.Action.new(&"step", func(_c: GSNpcAiContext) -> bool:
 			laps.append("step")
 			return laps.size() < 3)
 	)
 
-	_check(patrol.tick(ctx) == DotNpcAiNode.Status.RUNNING, "UntilFail keeps going")
+	_check(patrol.tick(ctx) == GSNpcAiNode.Status.RUNNING, "UntilFail keeps going")
 	patrol.tick(ctx)
 	_check(
-		patrol.tick(ctx) == DotNpcAiNode.Status.SUCCESS,
+		patrol.tick(ctx) == GSNpcAiNode.Status.SUCCESS,
 		"and succeeds once the child finally fails"
 	)
 	_check(laps.size() == 3, "having run it three times")
@@ -79,14 +79,14 @@ func _test_more_decorators() -> void:
 func _decorators_chance() -> void:
 	# The same decision on the same tick must come out the same way twice, or a replay
 	# and the server that recorded it disagree about what an NPC did.
-	var coin := DotNpcAiDecorator.RandomChance.new(
+	var coin := GSNpcAiDecorator.RandomChance.new(
 		&"coin",
-		DotNpcAiLeaf.Condition.new(&"yes", func(_c: DotNpcAiContext) -> bool: return true),
+		GSNpcAiLeaf.Condition.new(&"yes", func(_c: GSNpcAiContext) -> bool: return true),
 		0.5, 12345
 	)
-	var twin := DotNpcAiDecorator.RandomChance.new(
+	var twin := GSNpcAiDecorator.RandomChance.new(
 		&"coin",
-		DotNpcAiLeaf.Condition.new(&"yes", func(_c: DotNpcAiContext) -> bool: return true),
+		GSNpcAiLeaf.Condition.new(&"yes", func(_c: GSNpcAiContext) -> bool: return true),
 		0.5, 12345
 	)
 
@@ -100,7 +100,7 @@ func _decorators_chance() -> void:
 		var b := twin.tick(probe)
 		if a != b:
 			same = false
-		if a == DotNpcAiNode.Status.SUCCESS:
+		if a == GSNpcAiNode.Status.SUCCESS:
 			heads += 1
 
 	_check(same, "two identical RandomChance nodes agree on every tick")
@@ -110,36 +110,36 @@ func _decorators_chance() -> void:
 		"%d of 200" % heads
 	)
 
-	var never := DotNpcAiDecorator.RandomChance.new(
+	var never := GSNpcAiDecorator.RandomChance.new(
 		&"never",
-		DotNpcAiLeaf.Condition.new(&"yes", func(_c: DotNpcAiContext) -> bool: return true),
+		GSNpcAiLeaf.Condition.new(&"yes", func(_c: GSNpcAiContext) -> bool: return true),
 		0.0, 1
 	)
-	var always := DotNpcAiDecorator.RandomChance.new(
+	var always := GSNpcAiDecorator.RandomChance.new(
 		&"always",
-		DotNpcAiLeaf.Condition.new(&"yes", func(_c: DotNpcAiContext) -> bool: return true),
+		GSNpcAiLeaf.Condition.new(&"yes", func(_c: GSNpcAiContext) -> bool: return true),
 		1.0, 1
 	)
 	probe.advance(0.1)
-	_check(never.tick(probe) == DotNpcAiNode.Status.FAILURE, "a chance of zero never runs")
-	_check(always.tick(probe) == DotNpcAiNode.Status.SUCCESS, "and one of one always does")
+	_check(never.tick(probe) == GSNpcAiNode.Status.FAILURE, "a chance of zero never runs")
+	_check(always.tick(probe) == GSNpcAiNode.Status.SUCCESS, "and one of one always does")
 
 
 func _test_random_selector() -> void:
 	_section("random selector")
 
 	var picks := {}
-	var children: Array[DotNpcAiNode] = []
+	var children: Array[GSNpcAiNode] = []
 
 	for i in 3:
 		var tag := "child%d" % i
-		children.append(DotNpcAiLeaf.Action.new(
-			StringName(tag), func(_c: DotNpcAiContext) -> bool:
+		children.append(GSNpcAiLeaf.Action.new(
+			StringName(tag), func(_c: GSNpcAiContext) -> bool:
 				picks[tag] = int(picks.get(tag, 0)) + 1
 				return true
 		))
 
-	var selector := DotNpcAiRandomSelector.new(&"pick", children)
+	var selector := GSNpcAiRandomSelector.new(&"pick", children)
 	selector.salt = 7
 
 	var ctx := _context()
@@ -157,17 +157,17 @@ func _test_random_selector() -> void:
 	_check(evenish, "and roughly evenly with no weights", str(picks))
 
 	var weighted_picks := {}
-	var weighted_children: Array[DotNpcAiNode] = []
+	var weighted_children: Array[GSNpcAiNode] = []
 
 	for i in 2:
 		var tag := "w%d" % i
-		weighted_children.append(DotNpcAiLeaf.Action.new(
-			StringName(tag), func(_c: DotNpcAiContext) -> bool:
+		weighted_children.append(GSNpcAiLeaf.Action.new(
+			StringName(tag), func(_c: GSNpcAiContext) -> bool:
 				weighted_picks[tag] = int(weighted_picks.get(tag, 0)) + 1
 				return true
 		))
 
-	var weighted := DotNpcAiRandomSelector.new(&"weighted", weighted_children)
+	var weighted := GSNpcAiRandomSelector.new(&"weighted", weighted_children)
 	weighted.set_weights([9.0, 1.0])
 	weighted.salt = 3
 
@@ -190,16 +190,16 @@ func _test_random_selector() -> void:
 	_done()
 
 
-func _random_selector_resume(children: Array[DotNpcAiNode]) -> void:
+func _random_selector_resume(children: Array[GSNpcAiNode]) -> void:
 	# The rule the whole addon is built on, reached from the one direction where it is
 	# tempting to break it: a chosen child that returns RUNNING is resumed, not
 	# re-rolled out of existence next tick.
 	var steps := []
-	var slow: Array[DotNpcAiNode] = [
+	var slow: Array[GSNpcAiNode] = [
 		_counting(4, steps, "slow"),
 		_counting(0, steps, "quick"),
 	]
-	var sticky := DotNpcAiRandomSelector.new(&"sticky", slow)
+	var sticky := GSNpcAiRandomSelector.new(&"sticky", slow)
 	sticky.salt = 11
 
 	var sctx := _context()
@@ -217,20 +217,20 @@ func _random_selector_resume(children: Array[DotNpcAiNode]) -> void:
 			stayed = false
 	_check(stayed, "a running choice is kept rather than re-rolled every tick", str(steps))
 
-	var empty := DotNpcAiRandomSelector.new(&"empty", [] as Array[DotNpcAiNode])
+	var empty := GSNpcAiRandomSelector.new(&"empty", [] as Array[GSNpcAiNode])
 	_check(
-		empty.tick(_context()) == DotNpcAiNode.Status.FAILURE,
+		empty.tick(_context()) == GSNpcAiNode.Status.FAILURE,
 		"a selector with no children fails rather than erroring"
 	)
 
-	var zeroed := DotNpcAiRandomSelector.new(&"zeroed", children)
+	var zeroed := GSNpcAiRandomSelector.new(&"zeroed", children)
 	zeroed.set_weights([0.0, 0.0, 0.0])
 	_check(
-		zeroed.tick(_context()) == DotNpcAiNode.Status.FAILURE,
+		zeroed.tick(_context()) == GSNpcAiNode.Status.FAILURE,
 		"and one where nothing weighs anything does too"
 	)
 
-	var negative := DotNpcAiRandomSelector.new(&"negative", children)
+	var negative := GSNpcAiRandomSelector.new(&"negative", children)
 	negative.set_weights([-5.0, 1.0, 1.0])
 	_check(
 		negative.weight_of(0) == 0.0,
@@ -242,12 +242,12 @@ func _random_selector_resume(children: Array[DotNpcAiNode]) -> void:
 func _test_character() -> void:
 	_section("character")
 
-	var normal := DotNpcAiCharacter.normal()
+	var normal := GSNpcAiCharacter.normal()
 	_check(normal.validate().ok, "the normal preset validates")
-	_check(DotNpcAiCharacter.easy().validate().ok, "so does easy")
-	_check(DotNpcAiCharacter.hard().validate().ok, "and hard")
+	_check(GSNpcAiCharacter.easy().validate().ok, "so does easy")
+	_check(GSNpcAiCharacter.hard().validate().ok, "and hard")
 
-	var worst := DotNpcAiCharacter.nightmare()
+	var worst := GSNpcAiCharacter.nightmare()
 	_check(worst.validate().ok, "and nightmare")
 	_check(
 		worst.reaction_time > 0.0 and worst.aim_accuracy < 1.0,
@@ -255,7 +255,7 @@ func _test_character() -> void:
 		"a bot that reacts instantly and never misses is a different game"
 	)
 	_check(
-		DotNpcAiCharacter.easy().reaction_time > worst.reaction_time,
+		GSNpcAiCharacter.easy().reaction_time > worst.reaction_time,
 		"and easy is slower to react than nightmare"
 	)
 
@@ -267,7 +267,7 @@ func _test_character() -> void:
 		"and can say how long is left"
 	)
 
-	var instant := DotNpcAiCharacter.new()
+	var instant := GSNpcAiCharacter.new()
 	instant.reaction_time = 0.0
 	_check(
 		instant.has_reacted(10.0, 10.0),
@@ -278,20 +278,20 @@ func _test_character() -> void:
 	_done()
 
 
-func _character_gate(normal: DotNpcAiCharacter, worst: DotNpcAiCharacter) -> void:
+func _character_gate(normal: GSNpcAiCharacter, worst: GSNpcAiCharacter) -> void:
 	# The gate is measured from `target_since` (moves when the target changes), not
 	# `engaged_at`, which is refreshed every pass and so is false for ever while a target is seen.
-	var instance := DotNpcInstance.new()
-	instance.def = DotNpcDef.make(&"x", "res://fixtures/npc_body.tscn")
+	var instance := GSNpcInstance.new()
+	instance.def = GSNpcDef.make(&"x", "res://fixtures/npc_body.tscn")
 	instance.target_id = &"somebody"
 	instance.target_since = 10.0
 	instance.engaged_at = 10.0
 
-	var brain := DotNpcAiBrain.new()
+	var brain := GSNpcAiBrain.new()
 	brain.npc = instance
 	brain.character = normal
-	brain.blackboard = DotNpcAiBlackboard.new()
-	brain.context = DotNpcAiContext.make(instance, brain, brain.blackboard)
+	brain.blackboard = GSNpcAiBlackboard.new()
+	brain.context = GSNpcAiContext.make(instance, brain, brain.blackboard)
 
 	brain.context.now = 10.1
 	_check(not brain.has_reacted(), "a brain has not reacted immediately")
@@ -314,21 +314,21 @@ func _character_gate(normal: DotNpcAiCharacter, worst: DotNpcAiCharacter) -> voi
 	_check(not normal.remembers(10.0, 100.0), "and forgotten eventually")
 
 	_check(
-		is_equal_approx(DotNpcAiCharacter.hard().sight_range(30.0), 36.0),
+		is_equal_approx(GSNpcAiCharacter.hard().sight_range(30.0), 36.0),
 		"alertness scales the definition's sight range rather than replacing it"
 	)
 
-	var bad := DotNpcAiCharacter.new()
+	var bad := GSNpcAiCharacter.new()
 	bad.alertness = 0.0
 	_check(
 		not bad.validate().ok,
 		"an alertness of zero is refused: it is an NPC that can never see anything"
 	)
 
-	var back := DotNpcAiCharacter.from_dictionary(worst.to_dictionary())
+	var back := GSNpcAiCharacter.from_dictionary(worst.to_dictionary())
 	_check(back.ok, "a character round-trips")
 	_check(
-		is_equal_approx((back.value as DotNpcAiCharacter).aim_skill, worst.aim_skill),
+		is_equal_approx((back.value as GSNpcAiCharacter).aim_skill, worst.aim_skill),
 		"with its numbers"
 	)
 
@@ -346,36 +346,36 @@ func _test_character_from_percentiles() -> void:
 		"tracking": {"p20": 3.0, "p50": 6.0, "p80": 9.0},
 		"time_to_kill": {"p20": 1.0, "p50": 2.0, "p80": 4.0},
 	}
-	var easy := DotNpcAiCharacter.from_percentiles(stats, "easy")
-	var norm := DotNpcAiCharacter.from_percentiles(stats)
-	var hard := DotNpcAiCharacter.from_percentiles(stats, "hard")
+	var easy := GSNpcAiCharacter.from_percentiles(stats, "easy")
+	var norm := GSNpcAiCharacter.from_percentiles(stats)
+	var hard := GSNpcAiCharacter.from_percentiles(stats, "hard")
 	_check(easy.ok and norm.ok and hard.ok, "a dictionary of percentiles gives a character per tier")
-	var e: DotNpcAiCharacter = easy.value
-	var n: DotNpcAiCharacter = norm.value
-	var h: DotNpcAiCharacter = hard.value
+	var e: GSNpcAiCharacter = easy.value
+	var n: GSNpcAiCharacter = norm.value
+	var h: GSNpcAiCharacter = hard.value
 	_check(is_equal_approx(n.reaction_time, 0.3), "normal reacts like the median person")
 	_check(e.reaction_time > n.reaction_time and n.reaction_time > h.reaction_time, "easy is the slow end of people, hard the fast")
 	_check(e.aim_accuracy < n.aim_accuracy and n.aim_accuracy < h.aim_accuracy, "and aims worse, then better")
-	_check(is_equal_approx(n.aim_accuracy, 1.0 - 4.0 / DotNpcAiCharacter.MAX_AIM_ERROR_DEG), "aim error maps onto the widest miss")
+	_check(is_equal_approx(n.aim_accuracy, 1.0 - 4.0 / GSNpcAiCharacter.MAX_AIM_ERROR_DEG), "aim error maps onto the widest miss")
 	_check(e.aim_skill < h.aim_skill, "tracking error sets how much of a mover is led")
 	_check(n.validate().ok and e.validate().ok and h.validate().ok, "and they validate")
-	_check(n.aggression == DotNpcAiCharacter.normal().aggression, "personality stays the preset's: people's stats are ability only")
+	_check(n.aggression == GSNpcAiCharacter.normal().aggression, "personality stays the preset's: people's stats are ability only")
 
 	var fast := {"reaction": {"p50": 0.0}, "aim_error": {"p50": 0.0}, "tracking": {"p50": 0.0}}
-	var f: DotNpcAiCharacter = DotNpcAiCharacter.from_percentiles(fast).value
-	var worst := DotNpcAiCharacter.nightmare()
+	var f: GSNpcAiCharacter = GSNpcAiCharacter.from_percentiles(fast).value
+	var worst := GSNpcAiCharacter.nightmare()
 	_check(f.reaction_time >= worst.reaction_time and f.aim_accuracy <= worst.aim_accuracy and f.aim_skill <= worst.aim_skill, "never better than nightmare")
 
-	var part: DotNpcAiCharacter = DotNpcAiCharacter.from_percentiles({"reaction": {"p50": NAN}, "aim_error": {"p50": 6.0}}).value
-	_check(part.reaction_time == DotNpcAiCharacter.normal().reaction_time, "a NaN value leaves the preset's number")
-	_check(part.aim_skill == DotNpcAiCharacter.normal().aim_skill, "and so does a missing metric")
-	_check(not DotNpcAiCharacter.from_percentiles({}).ok, "nothing usable is an error, not a default NPC")
-	_check(not DotNpcAiCharacter.from_percentiles(42).ok, "and so is something that is not percentiles")
+	var part: GSNpcAiCharacter = GSNpcAiCharacter.from_percentiles({"reaction": {"p50": NAN}, "aim_error": {"p50": 6.0}}).value
+	_check(part.reaction_time == GSNpcAiCharacter.normal().reaction_time, "a NaN value leaves the preset's number")
+	_check(part.aim_skill == GSNpcAiCharacter.normal().aim_skill, "and so does a missing metric")
+	_check(not GSNpcAiCharacter.from_percentiles({}).ok, "nothing usable is an error, not a default NPC")
+	_check(not GSNpcAiCharacter.from_percentiles(42).ok, "and so is something that is not percentiles")
 
 	var duck := FakeStats.new()
 	duck.table = stats
-	var d := DotNpcAiCharacter.from_percentiles(duck, "hard")
-	_check(d.ok and is_equal_approx((d.value as DotNpcAiCharacter).reaction_time, 0.2), "an object with percentiles() is read, no import of its class")
+	var d := GSNpcAiCharacter.from_percentiles(duck, "hard")
+	_check(d.ok and is_equal_approx((d.value as GSNpcAiCharacter).reaction_time, 0.2), "an object with percentiles() is read, no import of its class")
 	_done()
 
 
@@ -390,7 +390,7 @@ class FakeStats:
 func _test_character_aim() -> void:
 	_section("character aim")
 
-	var perfect := DotNpcAiCharacter.new()
+	var perfect := GSNpcAiCharacter.new()
 	perfect.aim_accuracy = 1.0
 	perfect.aim_skill = 0.0
 
@@ -402,7 +402,7 @@ func _test_character_aim() -> void:
 		"a perfect shot at a still target is the target"
 	)
 
-	var leading := DotNpcAiCharacter.new()
+	var leading := GSNpcAiCharacter.new()
 	leading.aim_accuracy = 1.0
 	leading.aim_skill = 1.0
 
@@ -410,7 +410,7 @@ func _test_character_aim() -> void:
 	var led := leading.aim_point(from, target, crossing, 100.0, 1)
 	_check(led.x > 0.5, "a skilled shot leads a crossing target", "x = %.2f" % led.x)
 
-	var unskilled := DotNpcAiCharacter.new()
+	var unskilled := GSNpcAiCharacter.new()
 	unskilled.aim_accuracy = 1.0
 	unskilled.aim_skill = 0.0
 	_check(
@@ -431,7 +431,7 @@ func _character_aim_scatter(from: Vector3, target: Vector3) -> void:
 	# The half-moon check. GameSpice Combat shipped a mixer that never returned above 0.5,
 	# so every shotgun pattern sat on one side of the aim — and a maximum-magnitude
 	# check passes for a half-moon. A quadrant check does not.
-	var sloppy := DotNpcAiCharacter.new()
+	var sloppy := GSNpcAiCharacter.new()
 	sloppy.aim_accuracy = 0.0
 	sloppy.seed_value = 99
 
@@ -485,7 +485,7 @@ func _character_aim_scatter(from: Vector3, target: Vector3) -> void:
 
 func _character_view() -> void:
 	# A view that can turn at any speed snaps round in one tick and is unplayable.
-	var slow := DotNpcAiCharacter.new()
+	var slow := GSNpcAiCharacter.new()
 	slow.view_turn_deg = 90.0
 	slow.view_factor = 1.0
 
@@ -512,7 +512,7 @@ func _character_view() -> void:
 		"including when the target is exactly behind it"
 	)
 
-	var quick := DotNpcAiCharacter.new()
+	var quick := GSNpcAiCharacter.new()
 	quick.view_turn_deg = 3600.0
 	quick.view_factor = 1.0
 	quick.overshoot = 0.0
@@ -521,7 +521,7 @@ func _character_view() -> void:
 		"and arrives exactly when the turn is within one tick"
 	)
 
-	var throttled := DotNpcAiCharacter.new()
+	var throttled := GSNpcAiCharacter.new()
 	throttled.fire_throttle = 1.0
 	_check(throttled.should_fire(1), "a full fire throttle always shoots")
 

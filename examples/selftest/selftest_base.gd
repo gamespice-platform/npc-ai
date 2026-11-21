@@ -37,23 +37,23 @@ func _check(ok: bool, what: String, detail: String = "") -> void:
 		print("  FAIL  %s" % line)
 
 
-func _context() -> DotNpcAiContext:
-	return DotNpcAiContext.make(null, null)
+func _context() -> GSNpcAiContext:
+	return GSNpcAiContext.make(null, null)
 
 
 ## A leaf that returns RUNNING for [param ticks] ticks, then SUCCESS, and counts.
 ##
 ## Counters live in an Array because a lambda captures locals by value.
-func _counting(ticks: int, log_into: Array, tag: String) -> DotNpcAiLeaf.Action:
+func _counting(ticks: int, log_into: Array, tag: String) -> GSNpcAiLeaf.Action:
 	var state := {"left": ticks}
 
-	return DotNpcAiLeaf.Action.new(StringName(tag), func(_ctx: DotNpcAiContext) -> int:
+	return GSNpcAiLeaf.Action.new(StringName(tag), func(_ctx: GSNpcAiContext) -> int:
 		log_into.append(tag)
 
 		if int(state["left"]) > 0:
 			state["left"] = int(state["left"]) - 1
-			return DotNpcAiNode.Status.RUNNING
+			return GSNpcAiNode.Status.RUNNING
 
 		state["left"] = ticks
-		return DotNpcAiNode.Status.SUCCESS
+		return GSNpcAiNode.Status.SUCCESS
 	)

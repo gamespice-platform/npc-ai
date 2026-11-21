@@ -1,4 +1,4 @@
-class_name DotNpcAiPersonality
+class_name GSNpcAiPersonality
 extends RefCounted
 
 ## A weight set that bends utility scoring: action multipliers, curve shifts, and a seeded per-NPC wobble.
@@ -12,8 +12,8 @@ var shifts: Dictionary = {}
 var jitter: float = 0.0
 
 
-static func make(p_id: StringName, weights: Dictionary = {}, p_shifts: Dictionary = {}, p_jitter: float = 0.0) -> DotNpcAiPersonality:
-	var p := DotNpcAiPersonality.new()
+static func make(p_id: StringName, weights: Dictionary = {}, p_shifts: Dictionary = {}, p_jitter: float = 0.0) -> GSNpcAiPersonality:
+	var p := GSNpcAiPersonality.new()
 	p.id = p_id
 	p.action_weights = weights
 	p.shifts = p_shifts
@@ -21,15 +21,15 @@ static func make(p_id: StringName, weights: Dictionary = {}, p_shifts: Dictionar
 	return p
 
 
-static func aggressive() -> DotNpcAiPersonality:
+static func aggressive() -> GSNpcAiPersonality:
 	return make(&"aggressive", {&"attack": 1.4, &"advance": 1.2, &"flee": 0.6, &"cover": 0.8}, {&"health": -0.2}, 0.1)
 
 
-static func cautious() -> DotNpcAiPersonality:
+static func cautious() -> GSNpcAiPersonality:
 	return make(&"cautious", {&"attack": 0.8, &"flee": 1.3, &"cover": 1.4, &"advance": 0.7}, {&"health": 0.2}, 0.1)
 
 
-static func flanker() -> DotNpcAiPersonality:
+static func flanker() -> GSNpcAiPersonality:
 	return make(&"flanker", {&"flank": 1.6, &"attack": 0.9, &"advance": 0.8, &"cover": 1.0}, {}, 0.1)
 
 
@@ -61,7 +61,7 @@ func to_dictionary() -> Dictionary:
 
 
 ## A personality from a dictionary; keys may be strings (JSON).
-static func from_dictionary(d: Dictionary, p_id: StringName = &"") -> DotResult:
+static func from_dictionary(d: Dictionary, p_id: StringName = &"") -> GSResult:
 	var weights := {}
 	var shifts_in := {}
 	for k in d.get("actions", {}):
@@ -70,9 +70,9 @@ static func from_dictionary(d: Dictionary, p_id: StringName = &"") -> DotResult:
 		shifts_in[StringName(str(k))] = float(d["shifts"][k])
 	var j := float(d.get("jitter", 0.0))
 	if j < 0.0 or j > 1.0:
-		return DotResult.fail(DotError.CODE_INVALID, "jitter must be within 0..1")
+		return GSResult.fail(GSError.CODE_INVALID, "jitter must be within 0..1")
 	var name := p_id if p_id != &"" else StringName(str(d.get("id", "custom")))
-	return DotResult.success(make(name, weights, shifts_in, j))
+	return GSResult.success(make(name, weights, shifts_in, j))
 
 
 func describe() -> String:

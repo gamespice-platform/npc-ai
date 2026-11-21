@@ -1,4 +1,4 @@
-class_name DotNpcAiAvoidance
+class_name GSNpcAiAvoidance
 extends Node
 
 ## Opt-in local avoidance for NPC crowds: a safe velocity from the one an NPC wants, via [method steer].
@@ -15,8 +15,8 @@ const _TABLE := 4096
 ## Drive [method advance] from this node's physics frame. Turn off to call it yourself.
 @export var auto_advance: bool = true
 
-## Every number, from [DotNpcAiAvoidanceConfig].
-var config: DotNpcAiAvoidanceConfig = DotNpcAiAvoidanceConfig.new()
+## Every number, from [GSNpcAiAvoidanceConfig].
+var config: GSNpcAiAvoidanceConfig = GSNpcAiAvoidanceConfig.new()
 
 ## Replaces the capability probe in tests; returns whether the RVO backend may be used.
 var rvo_probe: Callable = Callable()
@@ -84,7 +84,7 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	DotLog.info(CHANNEL, "npc ai avoidance placed", {"enabled": config.enabled, "backend": String(backend())})
+	GSLog.info(CHANNEL, "npc ai avoidance placed", {"enabled": config.enabled, "backend": String(backend())})
 
 
 func _physics_process(delta: float) -> void:
@@ -98,7 +98,7 @@ func _exit_tree() -> void:
 
 ## The avoidance node registered under [constant SERVICE], or null.
 static func find() -> Object:
-	return DotRegistry.get_service(SERVICE)
+	return GSRegistry.get_service(SERVICE)
 
 
 ## Whether the navigation server can run RVO agents here (asked of the server, never of the platform name).
@@ -119,11 +119,11 @@ static func rvo_supported() -> bool:
 
 ## Registers this node so brains can find it.
 func register_service() -> void:
-	DotRegistry.register(SERVICE, self)
+	GSRegistry.register(SERVICE, self)
 
 
 ## Sets the config and picks the backend again.
-func apply_config(p_config: DotNpcAiAvoidanceConfig) -> void:
+func apply_config(p_config: GSNpcAiAvoidanceConfig) -> void:
 	_release_all()
 	config = p_config
 	_backend = &""
@@ -135,7 +135,7 @@ func backend() -> StringName:
 		var rvo_ok: bool = bool(rvo_probe.call()) if rvo_probe.is_valid() else rvo_supported()
 		var wants_rvo := config.backend == "auto" or config.backend == "rvo"
 		_backend = &"rvo" if wants_rvo and rvo_ok else &"separation"
-		DotLog.debug(CHANNEL, "backend chosen", {"asked": config.backend, "using": String(_backend)})
+		GSLog.debug(CHANNEL, "backend chosen", {"asked": config.backend, "using": String(_backend)})
 	return _backend
 
 

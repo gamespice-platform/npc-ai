@@ -6,15 +6,15 @@ extends "res://examples/selftest/selftest_base.gd"
 func _test_steering() -> void:
 	_section("steering")
 
-	var seek := DotNpcAiSteering.seek(Vector3.ZERO, Vector3(10, 5, 0))
+	var seek := GSNpcAiSteering.seek(Vector3.ZERO, Vector3(10, 5, 0))
 	_check(seek.is_equal_approx(Vector3.RIGHT), "seek points at the goal")
 	_check(seek.y == 0.0, "and never up a slope", "the vertical is the ground's business")
 
-	var flee := DotNpcAiSteering.flee(Vector3.ZERO, Vector3(10, 0, 0))
+	var flee := GSNpcAiSteering.flee(Vector3.ZERO, Vector3(10, 0, 0))
 	_check(flee.is_equal_approx(Vector3.LEFT), "flee points away")
 
-	var far := DotNpcAiSteering.arrive(Vector3.ZERO, Vector3(20, 0, 0), 5.0)
-	var near := DotNpcAiSteering.arrive(Vector3.ZERO, Vector3(1, 0, 0), 5.0)
+	var far := GSNpcAiSteering.arrive(Vector3.ZERO, Vector3(20, 0, 0), 5.0)
+	var near := GSNpcAiSteering.arrive(Vector3.ZERO, Vector3(1, 0, 0), 5.0)
 	_check(far.length() > 0.99, "arrive is at full speed far away")
 	_check(
 		near.length() < 0.25,
@@ -22,13 +22,13 @@ func _test_steering() -> void:
 		"an NPC without this overshoots and reads as indecisive"
 	)
 
-	var crowded := DotNpcAiSteering.separate(
+	var crowded := GSNpcAiSteering.separate(
 		Vector3.ZERO, [Vector3(1, 0, 0), Vector3(0, 0, 1)], 3.0
 	)
 	_check(crowded.x < 0.0 and crowded.z < 0.0, "separation pushes away from a crowd")
 
-	var touching := DotNpcAiSteering.separate(Vector3.ZERO, [Vector3(0.1, 0, 0)], 3.0)
-	var distant := DotNpcAiSteering.separate(Vector3.ZERO, [Vector3(2.9, 0, 0)], 3.0)
+	var touching := GSNpcAiSteering.separate(Vector3.ZERO, [Vector3(0.1, 0, 0)], 3.0)
+	var distant := GSNpcAiSteering.separate(Vector3.ZERO, [Vector3(2.9, 0, 0)], 3.0)
 	_check(
 		touching.length() > 0.0 and distant.length() >= 0.0,
 		"and something nearly touching pushes harder than something at the edge",
@@ -36,20 +36,20 @@ func _test_steering() -> void:
 	)
 
 	_check(
-		DotNpcAiSteering.separate(Vector3.ZERO, [Vector3(50, 0, 0)], 3.0) == Vector3.ZERO,
+		GSNpcAiSteering.separate(Vector3.ZERO, [Vector3(50, 0, 0)], 3.0) == Vector3.ZERO,
 		"and something outside the radius does not push at all"
 	)
 
 	# One NPC directly on top of another. The horizontal offset is nothing, so without
 	# a tie-break the push is nothing and the pair stays stacked for ever — which is
 	# exactly what happened in this addon's own crowd test before the tie-break existed.
-	var stacked := DotNpcAiSteering.separate(Vector3.ZERO, [Vector3(0, -1.4, 0)], 1.6)
+	var stacked := GSNpcAiSteering.separate(Vector3.ZERO, [Vector3(0, -1.4, 0)], 1.6)
 	_check(
 		stacked == Vector3.ZERO,
 		"a stacked pair cannot be separated by a horizontal push alone"
 	)
 
-	var broken_apart := DotNpcAiSteering.separate(
+	var broken_apart := GSNpcAiSteering.separate(
 		Vector3.ZERO, [Vector3(0, -1.4, 0)], 1.6, Vector3.RIGHT
 	)
 	_check(
@@ -58,7 +58,7 @@ func _test_steering() -> void:
 		"measured: a capsule perched on another's head, chasing perfectly, at a dead stop"
 	)
 
-	var blended := DotNpcAiSteering.blend([
+	var blended := GSNpcAiSteering.blend([
 		[Vector3.RIGHT, 1.0], [Vector3.FORWARD, 1.0]
 	])
 	_check(absf(blended.length() - 1.0) < 0.001, "a blend is normalised",
@@ -69,7 +69,7 @@ func _test_steering() -> void:
 func _test_crowd_grid() -> void:
 	_section("crowd grid")
 
-	var grid := DotNpcAiCrowdGrid.new(4.0)
+	var grid := GSNpcAiCrowdGrid.new(4.0)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
 	var points: Array = []
@@ -99,7 +99,7 @@ func _test_crowd_grid() -> void:
 			if j != k:
 				others.append(points[j])
 		var from := centre + Vector3(0.1, 0.0, -0.05)
-		var want := DotNpcAiSteering.separate(from, others, 1.6, Vector3.RIGHT)
+		var want := GSNpcAiSteering.separate(from, others, 1.6, Vector3.RIGHT)
 		var got := grid.separation(k, from, 1.6, 3.2, Vector3.RIGHT)
 		same = same and got == want
 	_check(same, "its separation is the steering one over near's neighbours, bit for bit",
@@ -108,7 +108,7 @@ func _test_crowd_grid() -> void:
 	grid.forget(grid.index_of(1007))
 	_check(not grid.near(points[7], 0.5, PackedInt32Array()).has(7), "a forgotten entry is in no query")
 
-	var stack := DotNpcAiCrowdGrid.new(4.0)
+	var stack := GSNpcAiCrowdGrid.new(4.0)
 	var _a := stack.add(1, Vector3.ZERO)
 	var _b := stack.add(2, Vector3(0, -1.4, 0))
 	_check(stack.separation(0, Vector3.ZERO, 1.6, 3.2, Vector3.RIGHT).is_equal_approx(Vector3.RIGHT),
@@ -128,7 +128,7 @@ func _test_wander() -> void:
 	var angles: Array[float] = []
 
 	for i in 60:
-		angle = DotNpcAiSteering.wander(angle, 0.3, i)
+		angle = GSNpcAiSteering.wander(angle, 0.3, i)
 		angles.append(angle)
 
 	var biggest_step := 0.0
@@ -150,7 +150,7 @@ func _test_wander() -> void:
 
 	var again := 0.0
 	for i in 60:
-		again = DotNpcAiSteering.wander(again, 0.3, i)
+		again = GSNpcAiSteering.wander(again, 0.3, i)
 
 	_check(
 		absf(again - angle) < 0.0001,
@@ -167,8 +167,8 @@ func _test_pursuit_and_avoidance() -> void:
 	var target := Vector3(10, 0, 0)
 	var running := Vector3(0, 0, 6)
 
-	var straight := DotNpcAiSteering.seek(from, target)
-	var led := DotNpcAiSteering.pursue(from, target, running, 5.0)
+	var straight := GSNpcAiSteering.seek(from, target)
+	var led := GSNpcAiSteering.pursue(from, target, running, 5.0)
 
 	_check(
 		led.z > straight.z + 0.05,
@@ -176,11 +176,11 @@ func _test_pursuit_and_avoidance() -> void:
 		"a tail chase never closes, and reads as an NPC slower than it is"
 	)
 	_check(
-		DotNpcAiSteering.pursue(from, target, running, 0.0) == straight,
+		GSNpcAiSteering.pursue(from, target, running, 0.0) == straight,
 		"and falls back to a plain seek when the chaser has no speed to predict over"
 	)
 
-	var evading := DotNpcAiSteering.evade(from, target, running, 5.0)
+	var evading := GSNpcAiSteering.evade(from, target, running, 5.0)
 	_check(
 		evading.dot(straight) < 0.0,
 		"evasion goes the other way"
@@ -194,7 +194,7 @@ func _test_pursuit_and_avoidance() -> void:
 	# braking is what makes a crowd pile up at a doorway and never resolve.
 	var barrel := [{"position": Vector3(3, 0, 0), "radius": 1.0}]
 	var heading := Vector3(1, 0, 0)
-	var dodged := DotNpcAiSteering.avoid(heading, from, barrel, 5.0, 0.5)
+	var dodged := GSNpcAiSteering.avoid(heading, from, barrel, 5.0, 0.5)
 
 	_check(
 		absf(dodged.z) > 0.05,
@@ -209,32 +209,32 @@ func _test_pursuit_and_avoidance() -> void:
 
 	var behind := [{"position": Vector3(-3, 0, 0), "radius": 1.0}]
 	_check(
-		DotNpcAiSteering.avoid(heading, from, behind, 5.0, 0.5) == heading,
+		GSNpcAiSteering.avoid(heading, from, behind, 5.0, 0.5) == heading,
 		"something behind is not in the way"
 	)
 
 	var beside := [{"position": Vector3(3, 0, 8), "radius": 1.0}]
 	_check(
-		DotNpcAiSteering.avoid(heading, from, beside, 5.0, 0.5) == heading,
+		GSNpcAiSteering.avoid(heading, from, beside, 5.0, 0.5) == heading,
 		"and neither is something to one side of the line being walked"
 	)
 
 	_check(
-		not DotNpcAiSteering.is_way_clear(heading, from, barrel, 5.0, 0.5),
+		not GSNpcAiSteering.is_way_clear(heading, from, barrel, 5.0, 0.5),
 		"is_way_clear says no with a barrel ahead"
 	)
 	_check(
-		DotNpcAiSteering.is_way_clear(heading, from, barrel, 1.0, 0.5),
+		GSNpcAiSteering.is_way_clear(heading, from, barrel, 1.0, 0.5),
 		"and yes when the look-ahead stops short of it"
 	)
 	_check(
-		DotNpcAiSteering.is_way_clear(heading, from, [], 5.0, 0.5),
+		GSNpcAiSteering.is_way_clear(heading, from, [], 5.0, 0.5),
 		"and yes with nothing in the world at all"
 	)
 
 	# Two NPCs approaching the same barrel head-on must not dance: both are deflected
 	# the same way, because the side is chosen from the geometry and not at random.
-	var first := DotNpcAiSteering.avoid(heading, from, barrel, 5.0, 0.5)
-	var second := DotNpcAiSteering.avoid(heading, from, barrel, 5.0, 0.5)
+	var first := GSNpcAiSteering.avoid(heading, from, barrel, 5.0, 0.5)
+	var second := GSNpcAiSteering.avoid(heading, from, barrel, 5.0, 0.5)
 	_check(first == second, "the deflection is the same every time it is asked")
 	_done()

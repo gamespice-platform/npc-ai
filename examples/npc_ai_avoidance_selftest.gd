@@ -1,6 +1,6 @@
 extends Node
 
-## DotNpcAiAvoidance: head-on pass, corridor squeeze, crowd spread, tier skip, cost, the fallback and the RVO backend.
+## GSNpcAiAvoidance: head-on pass, corridor squeeze, crowd spread, tier skip, cost, the fallback and the RVO backend.
 
 const CHECKS := 33
 const SECTIONS := 9
@@ -30,7 +30,7 @@ class Walker extends RefCounted:
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -81,9 +81,9 @@ func _check(ok: bool, what: String, detail: String = "") -> void:
 		print("  FAIL  %s %s" % [what, detail])
 
 
-func _node(backend: String = "separation", enabled: bool = true, probe: Variant = null) -> DotNpcAiAvoidance:
-	var av := DotNpcAiAvoidance.new()
-	var c := DotNpcAiAvoidanceConfig.new()
+func _node(backend: String = "separation", enabled: bool = true, probe: Variant = null) -> GSNpcAiAvoidance:
+	var av := GSNpcAiAvoidance.new()
+	var c := GSNpcAiAvoidanceConfig.new()
 	c.enabled = enabled
 	c.backend = backend
 	av.apply_config(c)
@@ -104,7 +104,7 @@ func _walker(from: Vector3, to: Vector3, speed: float = 3.0) -> Walker:
 
 ## One step of a crowd: advance, ask each walker's safe velocity, move it. [param half_width] > 0 clamps z like walls.
 ## Returns how many pairs are closer than 0.6 m (bodies are 0.9 m).
-func _step(av: DotNpcAiAvoidance, walkers: Array, half_width: float = 0.0, avoid: bool = true) -> int:
+func _step(av: GSNpcAiAvoidance, walkers: Array, half_width: float = 0.0, avoid: bool = true) -> int:
 	av.advance(DT)
 	for i in walkers.size():
 		var w: Walker = walkers[i]
@@ -140,7 +140,7 @@ func _test_off_by_default() -> void:
 	var want := Vector3(3, 0, 0)
 	_check(av.steer(1, w, want) == want, "disabled: the wanted velocity comes back untouched")
 	_check(av.agent_count() == 0, "disabled: no agent is even created")
-	_check(not DotNpcAiAvoidanceConfig.new().enabled, "the config ships disabled")
+	_check(not GSNpcAiAvoidanceConfig.new().enabled, "the config ships disabled")
 	av.queue_free()
 	_done()
 
@@ -319,7 +319,7 @@ func _test_cost() -> void:
 
 
 ## The same loop as _step, without the overlap count (which is O(n squared) and not what is being priced).
-func _step_cost_only(av: DotNpcAiAvoidance, walkers: Array) -> void:
+func _step_cost_only(av: GSNpcAiAvoidance, walkers: Array) -> void:
 	av.advance(DT)
 	for i in walkers.size():
 		var w: Walker = walkers[i]
@@ -332,7 +332,7 @@ func _step_cost_only(av: DotNpcAiAvoidance, walkers: Array) -> void:
 
 func _test_rvo() -> void:
 	_section("rvo backend")
-	if not DotNpcAiAvoidance.rvo_supported():
+	if not GSNpcAiAvoidance.rvo_supported():
 		print("  (navigation server cannot run agents here; the fallback section covered this path)")
 		_check(true, "rvo unsupported: skipped")
 		_check(true, "rvo unsupported: skipped")
@@ -366,13 +366,13 @@ func _test_describe() -> void:
 	var d := av.describe()
 	_check(d["agents"] == 1 and d["backend"] == "separation", "describe names the backend and the agent count")
 	_check(av.describe_lines().size() == 3, "describe_lines is three lines")
-	var c := DotNpcAiAvoidanceConfig.new()
+	var c := GSNpcAiAvoidanceConfig.new()
 	var applied := c.apply_dictionary({"enabled": true, "max_neighbours": 4, "max_tier": 2})
-	_check(c.enabled and c.max_neighbours == 4 and c.max_tier == 2, "the config takes a dictionary like any DotConfig", str(applied))
+	_check(c.enabled and c.max_neighbours == 4 and c.max_tier == 2, "the config takes a dictionary like any GSConfig", str(applied))
 	_check(c.validate().ok, "and validates")
-	DotNpcAiAvoidance.new().queue_free()
+	GSNpcAiAvoidance.new().queue_free()
 	av.register_service()
-	_check(DotNpcAiAvoidance.find() == av, "it registers as a service")
-	DotRegistry.unregister(DotNpcAiAvoidance.SERVICE)
+	_check(GSNpcAiAvoidance.find() == av, "it registers as a service")
+	GSRegistry.unregister(GSNpcAiAvoidance.SERVICE)
 	av.queue_free()
 	_done()

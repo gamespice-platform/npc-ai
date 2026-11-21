@@ -1,10 +1,10 @@
 extends "dot_npc_ai_brain_tactics.gd"
 
-## What [DotNpcAiBrain] notices each tick: target, damage, sounds and squad reports, into the conditions. Not a public class.
+## What [GSNpcAiBrain] notices each tick: target, damage, sounds and squad reports, into the conditions. Not a public class.
 
 
 ## Everything this NPC notices this tick, before anything decides.
-## In this order, because each step reads the last: the target (senses have run), damage since the last think, what can be heard, what the squad said. Sets the conditions every guard and [DotNpcAiDecorator.Interrupt] reads.
+## In this order, because each step reads the last: the target (senses have run), damage since the last think, what can be heard, what the squad said. Sets the conditions every guard and [GSNpcAiDecorator.Interrupt] reads.
 func _sense() -> void:
 	var c := context.conditions
 	c.begin_tick()
@@ -33,17 +33,17 @@ func _sense() -> void:
 			if seen:
 				_report(entry, now)
 
-		c.set_flag(DotNpcAiConditions.SEE_ENEMY if seen else DotNpcAiConditions.ENEMY_OCCLUDED)
+		c.set_flag(GSNpcAiConditions.SEE_ENEMY if seen else GSNpcAiConditions.ENEMY_OCCLUDED)
 
 		if npc.target_id != _last_target:
-			c.set_flag(DotNpcAiConditions.NEW_ENEMY)
+			c.set_flag(GSNpcAiConditions.NEW_ENEMY)
 			# Every role on the old one is let go, or a squad's slots fill with NPCs that
 			# are attacking somebody else.
 			_release_roles_on(_last_target)
 			# A new target is a new fight; a search half done for the old one is over.
 			_end_search()
 	elif _had_target:
-		c.set_flag(DotNpcAiConditions.LOST_ENEMY)
+		c.set_flag(GSNpcAiConditions.LOST_ENEMY)
 		_release_roles_on(_last_target)
 
 	_had_target = has_target
@@ -52,7 +52,7 @@ func _sense() -> void:
 	_sense_damage(c)
 
 	if npc.def != null and npc.health_fraction() <= low_health_fraction:
-		c.set_flag(DotNpcAiConditions.LOW_HEALTH)
+		c.set_flag(GSNpcAiConditions.LOW_HEALTH)
 
 	_listen(c)
 
@@ -61,25 +61,25 @@ func _sense() -> void:
 		_report_seq = squad.pull(self, _report_seq)
 
 	if _informed_pending:
-		c.set_flag(DotNpcAiConditions.SQUAD_INFORMED)
+		c.set_flag(GSNpcAiConditions.SQUAD_INFORMED)
 		_informed_pending = false
 
 	if has_target and holds_attack_slot():
-		c.set_flag(DotNpcAiConditions.HAS_ATTACK_SLOT)
+		c.set_flag(GSNpcAiConditions.HAS_ATTACK_SLOT)
 
 	if squad != null:
 		if squad.tokens.enabled:
-			squad.token_sight(self, c.has(DotNpcAiConditions.SEE_ENEMY), _world_now())
+			squad.token_sight(self, c.has(GSNpcAiConditions.SEE_ENEMY), _world_now())
 		squad.sweep(_world_now())
 
 
 ## LIGHT_DAMAGE for any hurt since the last think; HEAVY_DAMAGE when the hurt inside the window adds up to [member heavy_damage_fraction] of its health.
 ## A window, not one hit: heavy is how fast health is going (three quick ten-percent hits break off; one a minute does not).
-func _sense_damage(c: DotNpcAiConditions) -> void:
+func _sense_damage(c: GSNpcAiConditions) -> void:
 	var now := context.now
 
 	if _pending_damage > 0.0:
-		c.set_flag(DotNpcAiConditions.LIGHT_DAMAGE)
+		c.set_flag(GSNpcAiConditions.LIGHT_DAMAGE)
 		_damage_log.append([now, _pending_damage])
 		_pending_damage = 0.0
 
@@ -99,13 +99,13 @@ func _sense_damage(c: DotNpcAiConditions) -> void:
 	var max_health := npc.def.max_health if npc.def != null else 0.0
 
 	if max_health > 0.0 and total >= max_health * heavy_damage_fraction:
-		c.set_flag(DotNpcAiConditions.HEAVY_DAMAGE)
+		c.set_flag(GSNpcAiConditions.HEAVY_DAMAGE)
 
 
-## Hears what the world's [DotNpcAiSounds] has said since the last think.
-func _listen(c: DotNpcAiConditions) -> void:
+## Hears what the world's [GSNpcAiSounds] has said since the last think.
+func _listen(c: GSNpcAiConditions) -> void:
 	if sounds == null:
-		sounds = DotNpcAiSounds.of(director)
+		sounds = GSNpcAiSounds.of(director)
 
 		if sounds == null:
 			return
@@ -113,7 +113,7 @@ func _listen(c: DotNpcAiConditions) -> void:
 	# Nothing said since it last listened: `audible` would return nothing.
 	if sounds.last_id() == _last_heard_id:
 		if in_danger():
-			c.set_flag(DotNpcAiConditions.HEAR_DANGER)
+			c.set_flag(GSNpcAiConditions.HEAR_DANGER)
 		return
 
 	var world_now := _world_now()
@@ -123,7 +123,7 @@ func _listen(c: DotNpcAiConditions) -> void:
 
 	for sound in sounds.audible(here, world_now, hearing, _last_heard_id):
 		match sound.kind:
-			DotNpcAiSounds.Kind.DANGER:
+			GSNpcAiSounds.Kind.DANGER:
 				# The nearest danger wins. A reflex rather than a decision, so there is no
 				# reaction gate: an NPC that stood still for its reaction time with a
 				# grenade at its feet would read as one that had not noticed.
@@ -132,8 +132,8 @@ func _listen(c: DotNpcAiConditions) -> void:
 					_danger_extent = sound.extent
 					_danger_until = sound.expires_at
 
-			DotNpcAiSounds.Kind.COMBAT:
-				c.set_flag(DotNpcAiConditions.HEAR_COMBAT)
+			GSNpcAiSounds.Kind.COMBAT:
+				c.set_flag(GSNpcAiConditions.HEAR_COMBAT)
 				# Attributed to its maker when the maker is somebody this NPC could fight;
 				# otherwise it is a fight somewhere — an ally's, an explosion — and that is
 				# still worth going to see.
@@ -141,16 +141,16 @@ func _listen(c: DotNpcAiConditions) -> void:
 				memory.heard(who, sound.position, context.now)
 				turn_to = sound.position
 
-			DotNpcAiSounds.Kind.MOVEMENT:
+			GSNpcAiSounds.Kind.MOVEMENT:
 				if _is_enemy(sound.owner):
-					c.set_flag(DotNpcAiConditions.HEAR_ENEMY)
+					c.set_flag(GSNpcAiConditions.HEAR_ENEMY)
 					memory.heard(sound.owner, sound.position, context.now)
 					turn_to = sound.position
 
 	_last_heard_id = sounds.last_id()
 
 	if in_danger():
-		c.set_flag(DotNpcAiConditions.HEAR_DANGER)
+		c.set_flag(GSNpcAiConditions.HEAR_DANGER)
 
 	# Turns toward what it heard when it has nothing better to look at, so its eyes — the
 	# sight cone GameSpice NPC checks — can find what its ears did.
@@ -169,7 +169,7 @@ func _is_enemy(id: StringName) -> bool:
 
 ## Tells the squad what it sees, at most every [member report_interval].
 ## Only an NPC with some tactics calls out: below [constant CALLOUT_TACTICS] it fights alone, half of what makes the easy preset easy.
-func _report(entry: DotNpcAiMemory.Entry, now: float) -> void:
+func _report(entry: GSNpcAiMemory.Entry, now: float) -> void:
 	if squad == null or tactics() < CALLOUT_TACTICS:
 		return
 
@@ -180,7 +180,7 @@ func _report(entry: DotNpcAiMemory.Entry, now: float) -> void:
 	squad.report(self, entry.id, entry.position, entry.velocity, now)
 
 
-## Called by [DotNpcAiSquad.report] when a squadmate saw something. True when it was news.
+## Called by [GSNpcAiSquad.report] when a squadmate saw something. True when it was news.
 func _squad_report(
 	enemy: StringName, position: Vector3, velocity: Vector3, seen_at: float
 ) -> bool:

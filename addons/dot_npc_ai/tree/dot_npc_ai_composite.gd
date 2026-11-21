@@ -1,28 +1,28 @@
-class_name DotNpcAiComposite
-extends DotNpcAiNode
+class_name GSNpcAiComposite
+extends GSNpcAiNode
 
-## A node with children. The base for [DotNpcAiSelector] and [DotNpcAiSequence].
-## It owns the running-child index, because the whole tree turns on that rule: a composite whose child returned RUNNING resumes there next tick, not at the first (see [DotNpcAiNode]).
+## A node with children. The base for [GSNpcAiSelector] and [GSNpcAiSequence].
+## It owns the running-child index, because the whole tree turns on that rule: a composite whose child returned RUNNING resumes there next tick, not at the first (see [GSNpcAiNode]).
 
-var _children: Array[DotNpcAiNode] = []
+var _children: Array[GSNpcAiNode] = []
 
 ## Which child is mid-way through something, or -1.
 var _running_child: int = -1
 
 
-func _init(p_name: StringName = &"", p_children: Array[DotNpcAiNode] = []) -> void:
+func _init(p_name: StringName = &"", p_children: Array[GSNpcAiNode] = []) -> void:
 	super(p_name)
 	_children = p_children.duplicate()
 
 
-func add(child: DotNpcAiNode) -> DotNpcAiComposite:
+func add(child: GSNpcAiNode) -> GSNpcAiComposite:
 	# Returns self so a tree can be written as one expression, which is the only way a
 	# tree written in code stays readable past about six nodes.
 	_children.append(child)
 	return self
 
 
-func children() -> Array[DotNpcAiNode]:
+func children() -> Array[GSNpcAiNode]:
 	return _children
 
 
@@ -39,12 +39,12 @@ func _resume_from() -> int:
 
 
 ## Abandons whatever child was running. Called when this composite gives up on it.
-func _abort_running(ctx: DotNpcAiContext) -> void:
+func _abort_running(ctx: GSNpcAiContext) -> void:
 	if _running_child >= 0 and _running_child < _children.size():
 		_children[_running_child].abort(ctx)
 
 	_running_child = -1
 
 
-func _abort(ctx: DotNpcAiContext) -> void:
+func _abort(ctx: GSNpcAiContext) -> void:
 	_abort_running(ctx)

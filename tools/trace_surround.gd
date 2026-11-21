@@ -21,8 +21,8 @@ func _run() -> void:
 	floor_body.global_position = Vector3(0, -1.4, 0)
 
 	var kind := OS.get_environment("TRACE_KIND") if OS.get_environment("TRACE_KIND") != "" else "soldier"
-	var cat := DotNpcCatalogue.new()
-	var soldier := DotNpcDef.make(&"soldier", "res://fixtures/npc_body.tscn")
+	var cat := GSNpcCatalogue.new()
+	var soldier := GSNpcDef.make(&"soldier", "res://fixtures/npc_body.tscn")
 	soldier.brain_script_path = "res://fixtures/searcher_brain.gd"
 	soldier.require_line_of_sight = false
 	soldier.sight_half_angle_deg = 180.0
@@ -35,7 +35,7 @@ func _run() -> void:
 
 	# Kind "gunner" (TRACE_KIND): two gunners, one flanking and one holding the front; a gunner is not an
 	# attacker, so this shows what flanking does with no melee in front.
-	var gunner := DotNpcDef.make(&"gunner", "res://fixtures/npc_body.tscn")
+	var gunner := GSNpcDef.make(&"gunner", "res://fixtures/npc_body.tscn")
 	gunner.brain_script_path = "res://fixtures/gunner_brain.gd"
 	gunner.require_line_of_sight = false
 	gunner.sight_half_angle_deg = 180.0
@@ -43,16 +43,16 @@ func _run() -> void:
 	gunner.meta = {"speed": 4.0, "skill": "hard", "squad": "pair", "near": 8.0, "far": 14.0, "attackers": 1}
 	cat.add(gunner)
 
-	var spawner := DotNpcSpawner.new()
+	var spawner := GSNpcSpawner.new()
 	spawner.catalogue = cat
-	var limits := DotNpcLimits.new()
+	var limits := GSNpcLimits.new()
 	limits.spawn_interval = 0.0
 	limits.require_navigable_spawn = false
 	limits.sense_period_ticks = 1
 	spawner.limits = limits
 	spawner.authoritative = true
 	world.add_child(spawner)
-	DotNpcAiSquads.new().attach(spawner)
+	GSNpcAiSquads.new().attach(spawner)
 
 	var all: Array = []
 	if kind == "gunner":
@@ -72,7 +72,7 @@ func _run() -> void:
 		if i > 180:
 			player.x += 2.0 / 60.0
 
-		spawner.set_candidates([DotNpcSenses.Candidate.new(&"p", player, &"player")])
+		spawner.set_candidates([GSNpcSenses.Candidate.new(&"p", player, &"player")])
 		spawner.tick(1.0 / 60.0)
 
 		if i % 6 == 0:
@@ -80,7 +80,7 @@ func _run() -> void:
 
 			for n in all:
 				var at: Vector3 = n.position()
-				var brain := n.brain as DotNpcAiBrain
+				var brain := n.brain as GSNpcAiBrain
 				row.append_array([str(at.x), str(at.z), "1" if brain.holds_attack_slot() else "0"])
 
 			out.store_line(",".join(row))

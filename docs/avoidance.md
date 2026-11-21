@@ -1,10 +1,10 @@
 # Local avoidance
 
-`DotNpcAiAvoidance` turns the velocity an NPC wants into one that does not walk through the NPCs around it. It is opt-in: with no node registered, or `DotNpcAiAvoidanceConfig.enabled` false (the default), `steer_with_spacing` behaves exactly as before. It sits on top of `DotNpcAiSteering.separate`, which still keeps the resting spacing; this pass is for NPCs that are moving.
+`GSNpcAiAvoidance` turns the velocity an NPC wants into one that does not walk through the NPCs around it. It is opt-in: with no node registered, or `GSNpcAiAvoidanceConfig.enabled` false (the default), `steer_with_spacing` behaves exactly as before. It sits on top of `GSNpcAiSteering.separate`, which still keeps the resting spacing; this pass is for NPCs that are moving.
 
 ## Wiring
 
-The host adds one `DotNpcAiAvoidance` node, gives it a config (`apply_config`) and calls `register_service()`. `DotNpcAiBrain.steer_with_spacing` finds it (looked for about once a second), passes its blended direction through `steer(key, source, want, tier)` and steers to the answer. A game that moves NPCs itself calls `steer()` the same way; `source` is anything with `position()`. Agents are created on their first `steer()` and forgotten `forget_ticks` after their last, so there is nothing to register or free. Walls stay the physics world's job: avoidance sees only other agents.
+The host adds one `GSNpcAiAvoidance` node, gives it a config (`apply_config`) and calls `register_service()`. `GSNpcAiBrain.steer_with_spacing` finds it (looked for about once a second), passes its blended direction through `steer(key, source, want, tier)` and steers to the answer. A game that moves NPCs itself calls `steer()` the same way; `source` is anything with `position()`. Agents are created on their first `steer()` and forgotten `forget_ticks` after their last, so there is nothing to register or free. Walls stay the physics world's job: avoidance sees only other agents.
 
 ## Two backends, one call
 
@@ -38,7 +38,7 @@ Measured by the suite's cost section, own pass, 250 agents packed 1.6 m apart (a
 
 ## Tunables
 
-All in `DotNpcAiAvoidanceConfig` (defaults, JSON, environment, command line): `enabled`, `backend`, `radius`, `horizon`, `max_neighbours`, `neighbour_range`, `max_scan`, `min_forward`, `max_tier`, `calm_interval`, `forget_ticks`, `cell_size`. `describe()` and `describe_lines()` give the backend, agent count, frame cost and the steered, reused, skipped, avoided and pushed counters; the DotLog channel is `npc.ai.avoid`.
+All in `GSNpcAiAvoidanceConfig` (defaults, JSON, environment, command line): `enabled`, `backend`, `radius`, `horizon`, `max_neighbours`, `neighbour_range`, `max_scan`, `min_forward`, `max_tier`, `calm_interval`, `forget_ticks`, `cell_size`. `describe()` and `describe_lines()` give the backend, agent count, frame cost and the steered, reused, skipped, avoided and pushed counters; the GSLog channel is `npc.ai.avoid`.
 
 ## Not done
 

@@ -1,7 +1,7 @@
-extends DotJob
+extends GSJob
 
-## The settings, state and measuring queries of [DotNpcAiNavAnnotator], split out so the annotator file
-## holds the phases only. Not a public class: extend [DotNpcAiNavAnnotator], never this.
+## The settings, state and measuring queries of [GSNpcAiNavAnnotator], split out so the annotator file
+## holds the phases only. Not a public class: extend [GSNpcAiNavAnnotator], never this.
 
 const CHANNEL := "npc.ai.annotate"
 
@@ -85,7 +85,7 @@ var reference: bool = false
 var los_fn: Callable = Callable()
 
 ## What this job is making. Filled as it runs; the job's result once it finishes.
-var annotations: DotNpcAiNavAnnotations = DotNpcAiNavAnnotations.new()
+var annotations: GSNpcAiNavAnnotations = GSNpcAiNavAnnotations.new()
 
 enum Phase { POLYGONS, EDGES, BORDER, ISLANDS, WATCHERS, SPOTS, PICK, ROUTES, CHOKEPOINTS, FINISH, DONE }
 
@@ -116,7 +116,7 @@ var _step_began_us: int = 0
 var _slowest_ms: float = 0.0
 var _slowest_phase: String = ""
 var _phase_started_us: int = 0
-var _rng: DotRandomStream = null
+var _rng: GSRandomStream = null
 
 var _vertices: PackedVector3Array = PackedVector3Array()
 var _centres: PackedVector3Array = PackedVector3Array()
@@ -234,7 +234,7 @@ static func key_for(mesh: NavigationMesh, with: Dictionary) -> String:
 static func _key_begin(mesh: NavigationMesh) -> HashingContext:
 	var ctx := HashingContext.new()
 	ctx.start(HashingContext.HASH_SHA256)
-	ctx.update(("dot_npc_ai_nav_annotations/%d|" % DotNpcAiNavAnnotations.VERSION).to_utf8_buffer())
+	ctx.update(("dot_npc_ai_nav_annotations/%d|" % GSNpcAiNavAnnotations.VERSION).to_utf8_buffer())
 	if mesh != null:
 		ctx.update(mesh.get_vertices().to_byte_array())
 	return ctx

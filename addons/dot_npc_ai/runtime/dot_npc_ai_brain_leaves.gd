@@ -1,33 +1,33 @@
 extends RefCounted
 
-## Cold, self-contained leaves of [DotNpcAiBrain], moved out so the brain stays a size a reader can hold.
+## Cold, self-contained leaves of [GSNpcAiBrain], moved out so the brain stays a size a reader can hold.
 ## Each takes the brain as [param b]; the brain keeps a one-line wrapper per public leaf.
 ## The velocity aimed at is what the NPC SAW (a perfect lead is the aimbot tell); below CALLOUT_TACTICS it ignores friendly fire.
 
 static func patrol_hot(
-	b: DotNpcAiBrain, ctx: DotNpcAiContext, speed: float, radius: float = 40.0
-) -> DotNpcAiNode.Status:
+	b: GSNpcAiBrain, ctx: GSNpcAiContext, speed: float, radius: float = 40.0
+) -> GSNpcAiNode.Status:
 	if b.npc == null or not b.npc.is_alive() or b.blackboard == null:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	if b.heatmap == null:
-		b.heatmap = DotNpcAiHeatmap.of(b.director)
+		b.heatmap = GSNpcAiHeatmap.of(b.director)
 
 	if b.heatmap == null or b.tactics() < b.PATROL_TACTICS:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var here := b.npc.position()
 	var goal: Variant = b.blackboard.get_value(b.KEY_PATROL_GOAL, ctx.now, null)
 
 	if not (goal is Vector3):
-		var hot := b.heatmap.hottest(DotNpcAiHeatmap.TRAFFIC, here, radius, b._world_now(), 4)
+		var hot := b.heatmap.hottest(GSNpcAiHeatmap.TRAFFIC, here, radius, b._world_now(), 4)
 
 		if hot.is_empty():
-			return DotNpcAiNode.Status.FAILURE
+			return GSNpcAiNode.Status.FAILURE
 
 		# A pick among the top few, from the NPC's seed and visits, so a pack does not all stand on one cell.
 		var visits := b.blackboard.get_int(b.KEY_PATROL_VISITS, ctx.now, 0)
-		var pick := int(DotNpcAiNode.deterministic_unit(b.npc.seed, visits + 1) * hot.size())
+		var pick := int(GSNpcAiNode.deterministic_unit(b.npc.seed, visits + 1) * hot.size())
 		goal = Vector3(hot[mini(pick, hot.size() - 1)].x, here.y, hot[mini(pick, hot.size() - 1)].z)
 		b.blackboard.put(b.KEY_PATROL_GOAL, goal, ctx.now)
 		b.blackboard.erase(b.KEY_PATROL_ARRIVED)
@@ -37,7 +37,7 @@ static func patrol_hot(
 
 	if flat.length() > b.heatmap.cell_size * 0.5 and not b.blackboard.has(b.KEY_PATROL_ARRIVED, ctx.now):
 		b.steer_with_spacing(goal, speed, ctx.delta)
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	if not b.blackboard.has(b.KEY_PATROL_ARRIVED, ctx.now):
 		b.blackboard.put(b.KEY_PATROL_ARRIVED, ctx.now, ctx.now)
@@ -45,7 +45,7 @@ static func patrol_hot(
 	b.halt()
 
 	# Facing the way the traffic comes from: an ambusher watches the door, not the wall.
-	var flow := b.heatmap.flow_at(DotNpcAiHeatmap.TRAFFIC, here, b._world_now())
+	var flow := b.heatmap.flow_at(GSNpcAiHeatmap.TRAFFIC, here, b._world_now())
 
 	if flow.length_squared() > 0.0001:
 		var look := flow
@@ -61,12 +61,12 @@ static func patrol_hot(
 		b.blackboard.erase(b.KEY_PATROL_ARRIVED)
 		b.blackboard.put(b.KEY_PATROL_VISITS, b.blackboard.get_int(b.KEY_PATROL_VISITS, ctx.now, 0) + 1, ctx.now)
 
-	return DotNpcAiNode.Status.RUNNING
+	return GSNpcAiNode.Status.RUNNING
 
 
-static func flee_danger(b: DotNpcAiBrain, ctx: DotNpcAiContext, speed: float) -> DotNpcAiNode.Status:
+static func flee_danger(b: GSNpcAiBrain, ctx: GSNpcAiContext, speed: float) -> GSNpcAiNode.Status:
 	if b.npc == null or not b.npc.is_alive() or not b.in_danger():
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var here := b.npc.position()
 	var away := here - b._danger_at
@@ -74,16 +74,16 @@ static func flee_danger(b: DotNpcAiBrain, ctx: DotNpcAiContext, speed: float) ->
 
 	if away.length() > b._danger_extent + 1.5:
 		b.halt()
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	if away.length_squared() < 0.0001:
 		away = -b.npc.facing()
 
 	b.steer_with_spacing(here + away.normalized() * 6.0, speed, ctx.delta)
-	return DotNpcAiNode.Status.RUNNING
+	return GSNpcAiNode.Status.RUNNING
 
 
-static func aim_solution(b: DotNpcAiBrain, muzzle: Vector3, travel_speed: float = 0.0) -> Vector3:
+static func aim_solution(b: GSNpcAiBrain, muzzle: Vector3, travel_speed: float = 0.0) -> Vector3:
 	if b.npc == null or not b.npc.has_target() or b.character == null:
 		return b.target_position(Vector3.INF)
 
@@ -99,11 +99,11 @@ static func aim_solution(b: DotNpcAiBrain, muzzle: Vector3, travel_speed: float 
 	return b.character.aim_point(muzzle, at, velocity, travel_speed, b.shots_fired)
 
 
-static func ready_to_fire(b: DotNpcAiBrain, muzzle: Vector3, tolerance_deg: float = 12.0) -> bool:
+static func ready_to_fire(b: GSNpcAiBrain, muzzle: Vector3, tolerance_deg: float = 12.0) -> bool:
 	if b.npc == null or not b.npc.is_alive() or not b.npc.has_target() or b.context == null:
 		return false
 
-	if not b.context.has_condition(DotNpcAiConditions.SEE_ENEMY) or not b.has_reacted():
+	if not b.context.has_condition(GSNpcAiConditions.SEE_ENEMY) or not b.has_reacted():
 		return false
 
 	var at := b.target_position(Vector3.INF)
@@ -126,7 +126,7 @@ static func ready_to_fire(b: DotNpcAiBrain, muzzle: Vector3, tolerance_deg: floa
 	return b.character == null or b.character.should_fire(b.context.tick_index)
 
 
-static func fire_lane_clear(b: DotNpcAiBrain, from: Vector3, to: Vector3, clearance: float = 0.8) -> bool:
+static func fire_lane_clear(b: GSNpcAiBrain, from: Vector3, to: Vector3, clearance: float = 0.8) -> bool:
 	if b.squad == null or b.tactics() < b.CALLOUT_TACTICS:
 		return true
 
@@ -161,15 +161,15 @@ static func fire_lane_clear(b: DotNpcAiBrain, from: Vector3, to: Vector3, cleara
 
 
 static func hold_range(
-	b: DotNpcAiBrain, ctx: DotNpcAiContext, speed: float, near: float = 8.0, far: float = 16.0, spacing: float = 1.6
-) -> DotNpcAiNode.Status:
+	b: GSNpcAiBrain, ctx: GSNpcAiContext, speed: float, near: float = 8.0, far: float = 16.0, spacing: float = 1.6
+) -> GSNpcAiNode.Status:
 	if b.npc == null or not b.npc.is_alive() or not b.npc.has_target():
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var at := b.target_position(Vector3.INF)
 
 	if at == Vector3.INF:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var here := b.npc.position()
 	var to := at - here
@@ -177,16 +177,16 @@ static func hold_range(
 	var distance := to.length()
 
 	if distance < 0.001:
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	if b.character != null and b.character.is_hesitating(b.npc.target_since, ctx.now):
 		b.halt()
 		b.face(to)
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	var toward := to / distance
 	var side := Vector3(-toward.z, 0.0, toward.x)
-	var period := 2.5 + 2.0 * DotNpcAiNode.deterministic_unit(b.npc.seed, 4421)
+	var period := 2.5 + 2.0 * GSNpcAiNode.deterministic_unit(b.npc.seed, 4421)
 	var drift := b.character.strafe_drift(ctx.now, period) if b.character != null else (1.0 if fmod(ctx.now / period, 2.0) < 1.0 else -1.0)
 	var wanted := side * drift * 0.6
 
@@ -197,10 +197,10 @@ static func hold_range(
 
 	b.steer_with_spacing(here + wanted.normalized() * 4.0, speed, ctx.delta, spacing)
 	b.face(to)
-	return DotNpcAiNode.Status.RUNNING
+	return GSNpcAiNode.Status.RUNNING
 
 
-static func _hurt_by(b: DotNpcAiBrain, by: StringName, amount: float) -> void:
+static func _hurt_by(b: GSNpcAiBrain, by: StringName, amount: float) -> void:
 	b._pending_damage += maxf(amount, 0.0)
 
 	if by == &"" or b.npc == null or not b.npc.is_alive() or b.memory == null or b.context == null:
@@ -244,19 +244,19 @@ static func _hurt_by(b: DotNpcAiBrain, by: StringName, amount: float) -> void:
 
 
 static func surround(
-	b: DotNpcAiBrain, ctx: DotNpcAiContext, speed: float, radius: float = 4.0, spacing: float = 1.6
-) -> DotNpcAiNode.Status:
+	b: GSNpcAiBrain, ctx: GSNpcAiContext, speed: float, radius: float = 4.0, spacing: float = 1.6
+) -> GSNpcAiNode.Status:
 	if b.npc == null or not b.npc.is_alive() or not b.npc.has_target():
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var center := b.target_position(Vector3.INF)
 
 	if center == Vector3.INF:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	if b.character != null and b.character.is_hesitating(b.npc.target_since, b.context.now):
 		b.halt()
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	var here := b.npc.position()
 	var group: Array
@@ -285,7 +285,7 @@ static func surround(
 		if b.squad != null:
 			b.squad.remember(key, now, [group, positions, facing])
 
-	var focus := DotNpcAiTactics.mean_bearing(center, positions)
+	var focus := GSNpcAiTactics.mean_bearing(center, positions)
 
 	if facing.length_squared() > 0.0001:
 		var behind := atan2(-facing.z, -facing.x)
@@ -293,10 +293,10 @@ static func surround(
 
 	# One place per spacing of arc, measured at the ring's radius.
 	var step := clampf(spacing * 1.4 / maxf(radius, 0.5), 0.2, PI)
-	var bearings := DotNpcAiTactics.spread_bearings(center, focus, positions, step)
+	var bearings := GSNpcAiTactics.spread_bearings(center, focus, positions, step)
 	var mine := group.find(b)
 	var bearing := bearings[mine] if mine >= 0 else focus
-	var point := DotNpcAiTactics.ring_toward(center, here, radius, bearing, b.flank_lead)
+	var point := GSNpcAiTactics.ring_toward(center, here, radius, bearing, b.flank_lead)
 
 	var flat := point - here
 	flat.y = 0.0
@@ -314,29 +314,29 @@ static func surround(
 			b.halt()
 
 		b.face(center - here)
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	b.steer_with_spacing(point, speed, ctx.delta, spacing)
-	return DotNpcAiNode.Status.RUNNING
+	return GSNpcAiNode.Status.RUNNING
 
 
 static func hold_off(
-	b: DotNpcAiBrain, ctx: DotNpcAiContext, speed: float, radius: float = 4.0, spacing: float = 1.6
-) -> DotNpcAiNode.Status:
+	b: GSNpcAiBrain, ctx: GSNpcAiContext, speed: float, radius: float = 4.0, spacing: float = 1.6
+) -> GSNpcAiNode.Status:
 	if b.squad == null or not b.squad.tokens.enabled:
 		return b.surround(ctx, speed, radius, spacing)
 
 	if b.npc == null or not b.npc.is_alive() or not b.npc.has_target():
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var center := b.target_position(Vector3.INF)
 
 	if center == Vector3.INF:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	if b.character != null and b.character.is_hesitating(b.npc.target_since, ctx.now):
 		b.halt()
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	var here := b.npc.position()
 	var allies: Array = []
@@ -345,10 +345,10 @@ static func hold_off(
 		if member != b:
 			allies.append(member.npc.position())
 
-	var point := DotNpcAiTactics.best_flank(center, b._enemy_facing(center), here, radius, allies, b.squad.tokens)
+	var point := GSNpcAiTactics.best_flank(center, b._enemy_facing(center), here, radius, allies, b.squad.tokens)
 
 	if point == Vector3.INF:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var flat := point - here
 	flat.y = 0.0
@@ -364,13 +364,13 @@ static func hold_off(
 			b.halt()
 
 		b.face(center - here)
-		return DotNpcAiNode.Status.RUNNING
+		return GSNpcAiNode.Status.RUNNING
 
 	b.steer_with_spacing(point, speed, ctx.delta, spacing)
-	return DotNpcAiNode.Status.RUNNING
+	return GSNpcAiNode.Status.RUNNING
 
 
-static func _waiting_with(b: DotNpcAiBrain) -> Array:
+static func _waiting_with(b: GSNpcAiBrain) -> Array:
 	var out: Array = [b]
 
 	if b.squad == null or not b.npc.has_target():
@@ -396,7 +396,7 @@ static func _waiting_with(b: DotNpcAiBrain) -> Array:
 	return out
 
 
-static func _enemy_facing(b: DotNpcAiBrain, center: Vector3) -> Vector3:
+static func _enemy_facing(b: GSNpcAiBrain, center: Vector3) -> Vector3:
 	if b.squad != null and b.npc.has_target():
 		var holding := b.squad.holder_ids(b._attack_slot())
 		var nearest := Vector3.INF

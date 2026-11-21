@@ -1,5 +1,5 @@
-class_name DotNpcAiSelector
-extends DotNpcAiComposite
+class_name GSNpcAiSelector
+extends GSNpcAiComposite
 
 ## Runs its children in order until one succeeds. "Try this, or that, or the other." SUCCESS on the first success, RUNNING while one runs, FAILURE only when all fail; order is priority.
 ## [b][member reactive] is the difference between an NPC that notices and one that does not:[/b] a plain selector never re-checks the children above the running one, so a wanderer ignores the player walking in front of it. Reactive re-runs from the first child each tick and aborts the running one when a higher branch becomes viable.
@@ -9,11 +9,11 @@ extends DotNpcAiComposite
 var reactive: bool = true
 
 
-func _init(p_name: StringName = &"", p_children: Array[DotNpcAiNode] = []) -> void:
+func _init(p_name: StringName = &"", p_children: Array[GSNpcAiNode] = []) -> void:
 	super(p_name, p_children)
 
 
-func _tick(ctx: DotNpcAiContext) -> Status:
+func _tick(ctx: GSNpcAiContext) -> Status:
 	var resume := _resume_from()
 	var from := 0 if reactive else resume
 

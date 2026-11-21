@@ -1,7 +1,7 @@
-class_name DotNpcAiSchedulerConfig
-extends DotConfig
+class_name GSNpcAiSchedulerConfig
+extends GSConfig
 
-## Every number of [DotNpcAiScheduler]. Layered like any DotConfig: defaults, JSON, environment, command line.
+## Every number of [GSNpcAiScheduler]. Layered like any GSConfig: defaults, JSON, environment, command line.
 
 ## Off by default: a scheduler that is registered but disabled lets every brain think every tick, as before.
 @export var enabled: bool = false
@@ -67,8 +67,8 @@ func cli_prefix() -> String:
 	return "--npc-ai-sched-"
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if not (full_range <= mid_range and mid_range <= far_range):
-		return DotResult.fail(DotError.CODE_INVALID, "tier ranges must rise: full <= mid <= far")
-	return DotResult.success(null)
+		return GSResult.fail(GSError.CODE_INVALID, "tier ranges must rise: full <= mid <= far")
+	return GSResult.success(null)
 

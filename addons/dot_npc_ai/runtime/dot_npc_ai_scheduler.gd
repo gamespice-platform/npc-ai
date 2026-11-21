@@ -1,4 +1,4 @@
-class_name DotNpcAiScheduler
+class_name GSNpcAiScheduler
 extends Node
 
 ## Opt-in level-of-detail time-slicer for NPC brains: a brain asks [method admit] before each think.
@@ -16,10 +16,10 @@ const TIERS := 4
 ## Drive [method advance] from this node's physics frame. Turn off to call it yourself.
 @export var auto_advance: bool = true
 
-## Every number, from [DotNpcAiSchedulerConfig].
-var config: DotNpcAiSchedulerConfig = DotNpcAiSchedulerConfig.new()
+## Every number, from [GSNpcAiSchedulerConfig].
+var config: GSNpcAiSchedulerConfig = GSNpcAiSchedulerConfig.new()
 
-## Returns the players' positions as an Array of Vector3. Empty means the [member DotNpcAiSchedulerConfig.player_group].
+## Returns the players' positions as an Array of Vector3. Empty means the [member GSNpcAiSchedulerConfig.player_group].
 var players_source: Callable = Callable()
 
 ## Called with a position, returns whether any player can see it. Unset means everything counts as seen.
@@ -88,7 +88,7 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	DotLog.info(CHANNEL, "npc ai scheduler placed", {
+	GSLog.info(CHANNEL, "npc ai scheduler placed", {
 		"enabled": config.enabled, "budget_ms": config.budget_ms,
 	})
 
@@ -100,16 +100,16 @@ func _physics_process(delta: float) -> void:
 
 ## The scheduler registered under [constant SERVICE], or null.
 static func find() -> Object:
-	return DotRegistry.get_service(SERVICE)
+	return GSRegistry.get_service(SERVICE)
 
 
 ## Registers this scheduler so brains can find it.
 func register_service() -> void:
-	DotRegistry.register(SERVICE, self)
+	GSRegistry.register(SERVICE, self)
 
 
 ## Sets the config, taking the cost estimate from it.
-func apply_config(p_config: DotNpcAiSchedulerConfig) -> void:
+func apply_config(p_config: GSNpcAiSchedulerConfig) -> void:
 	config = p_config
 	_est_cost_us = config.initial_cost_us
 

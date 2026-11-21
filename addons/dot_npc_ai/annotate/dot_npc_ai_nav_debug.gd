@@ -1,18 +1,18 @@
-class_name DotNpcAiNavDebug
+class_name GSNpcAiNavDebug
 extends Node3D
 
-## Draws a map's [DotNpcAiNavAnnotations] (and the mesh, if given): links as arrows by kind, hiding spots as tall markers, other spots small, chokepoints as bars as wide as the passage.
+## Draws a map's [GSNpcAiNavAnnotations] (and the mesh, if given): links as arrows by kind, hiding spots as tall markers, other spots small, chokepoints as bars as wide as the passage.
 ## [b]Looked at, because no assertion reaches it:[/b] a link on the wrong floor passes every count. Unshaded and over the geometry ([member through_walls]); built once in [method show_annotations].
 
 # No log channel: it draws.
 
 const LINK_COLOURS := {
-	DotNpcAiNavAnnotations.LINK_DROP: Color(1.0, 0.25, 0.2),
-	DotNpcAiNavAnnotations.LINK_JUMP_UP: Color(0.25, 1.0, 0.3),
-	DotNpcAiNavAnnotations.LINK_JUMP_GAP: Color(1.0, 0.9, 0.15),
-	DotNpcAiNavAnnotations.LINK_LADDER: Color(0.75, 0.4, 1.0),
-	DotNpcAiNavAnnotations.LINK_TELEPORT: Color(1.0, 0.4, 0.9),
-	DotNpcAiNavAnnotations.LINK_RIDE: Color(0.2, 0.9, 1.0),
+	GSNpcAiNavAnnotations.LINK_DROP: Color(1.0, 0.25, 0.2),
+	GSNpcAiNavAnnotations.LINK_JUMP_UP: Color(0.25, 1.0, 0.3),
+	GSNpcAiNavAnnotations.LINK_JUMP_GAP: Color(1.0, 0.9, 0.15),
+	GSNpcAiNavAnnotations.LINK_LADDER: Color(0.75, 0.4, 1.0),
+	GSNpcAiNavAnnotations.LINK_TELEPORT: Color(1.0, 0.4, 0.9),
+	GSNpcAiNavAnnotations.LINK_RIDE: Color(0.2, 0.9, 1.0),
 }
 const HIDING_COLOUR := Color(0.2, 0.45, 1.0)
 const SPOT_COLOUR := Color(0.55, 0.85, 1.0, 0.8)
@@ -28,9 +28,9 @@ const MESH_COLOUR := Color(0.2, 0.75, 0.35, 0.35)
 
 
 ## Clears and draws [param a], and [param mesh] under it when given: only [param polygons]
-## of it when that is not empty ([method DotNpcAiNavAnnotator.kept_polygons], so a roof the
+## of it when that is not empty ([method GSNpcAiNavAnnotator.kept_polygons], so a roof the
 ## bake walked on is not drawn over the map).
-func show_annotations(a: DotNpcAiNavAnnotations, mesh: NavigationMesh = null, polygons: PackedInt32Array = PackedInt32Array()) -> void:
+func show_annotations(a: GSNpcAiNavAnnotations, mesh: NavigationMesh = null, polygons: PackedInt32Array = PackedInt32Array()) -> void:
 	for child in get_children():
 		remove_child(child)
 		child.free()

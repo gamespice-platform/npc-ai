@@ -1,4 +1,4 @@
-class_name DotNpcAiBlackboard
+class_name GSNpcAiBlackboard
 extends RefCounted
 
 ## What one NPC knows, as keyed values: the memory a tree or machine works over, in simulated seconds from the caller (never a wall clock, so a stalled server remembers the same).
@@ -7,7 +7,7 @@ extends RefCounted
 
 ## Read-through fallback: a squad's board, a director's board, a game's.
 ## [b]Never written through:[/b] one NPC's mistaken sighting would become the squad's belief.
-var parent: DotNpcAiBlackboard = null
+var parent: GSNpcAiBlackboard = null
 
 ## Key -> {"value": Variant, "expires_at": float, "written_at": float}.
 var _entries: Dictionary = {}

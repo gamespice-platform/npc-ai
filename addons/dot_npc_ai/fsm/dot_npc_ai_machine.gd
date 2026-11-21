@@ -1,7 +1,7 @@
-class_name DotNpcAiMachine
+class_name GSNpcAiMachine
 extends RefCounted
 
-## A state machine over [DotNpcAiState]s. The simpler half of this addon.
+## A state machine over [GSNpcAiState]s. The simpler half of this addon.
 ## Transitions are taken at most [member max_transitions_per_tick] times a tick: two states that each send the NPC to the other would hang the server, and the cap turns that into a warning and a visible stuck NPC.
 
 const CHANNEL := "npc.ai"
@@ -13,7 +13,7 @@ signal changed(from: StringName, to: StringName)
 ## Four, not one: a legitimate chain happens ("idle" to "alerted" to "chasing" on the tick a player appears) and one would take three ticks.
 var max_transitions_per_tick: int = 4
 
-## Id -> DotNpcAiState.
+## Id -> GSNpcAiState.
 var _states: Dictionary = {}
 
 var _current: StringName = &""
@@ -27,7 +27,7 @@ var transition_count: int = 0
 var thrash_count: int = 0
 
 
-func add(state: DotNpcAiState) -> DotNpcAiMachine:
+func add(state: GSNpcAiState) -> GSNpcAiMachine:
 	if state != null and state.id != &"":
 		_states[state.id] = state
 
@@ -46,9 +46,9 @@ func current() -> StringName:
 	return _current
 
 
-func current_state() -> DotNpcAiState:
+func current_state() -> GSNpcAiState:
 	var found: Variant = _states.get(_current)
-	return found if found is DotNpcAiState else null
+	return found if found is GSNpcAiState else null
 
 
 ## Simulated seconds spent in the current state.
@@ -58,9 +58,9 @@ func elapsed(now: float) -> float:
 
 ## Puts the machine into [param id] without asking any transition.
 ## For starting the machine and forcing a state from outside: an NPC that was just shot goes to "hurt" because it was shot, not because a condition noticed.
-func go_to(ctx: DotNpcAiContext, id: StringName) -> DotResult:
+func go_to(ctx: GSNpcAiContext, id: StringName) -> GSResult:
 	if not _states.has(id):
-		return DotResult.fail(DotError.CODE_INVALID, "No such state.", String(id))
+		return GSResult.fail(GSError.CODE_INVALID, "No such state.", String(id))
 
 	var from := _current
 	var leaving := current_state()
@@ -72,19 +72,19 @@ func go_to(ctx: DotNpcAiContext, id: StringName) -> DotResult:
 	_entered_at = ctx.now
 	transition_count += 1
 
-	var entering: DotNpcAiState = _states[id]
+	var entering: GSNpcAiState = _states[id]
 
 	if entering.on_enter.is_valid():
 		entering.on_enter.call(ctx)
 
 	changed.emit(from, id)
 
-	return DotResult.success(entering)
+	return GSResult.success(entering)
 
 
 ## One tick: take any transitions that apply, then run the state that is current.
 ## Transitions first: the other order runs a state one tick after its exit condition held, so "flee when hurt" walks one more tick toward the threat.
-func tick(ctx: DotNpcAiContext) -> void:
+func tick(ctx: GSNpcAiContext) -> void:
 	if _current == &"":
 		return
 
@@ -102,7 +102,7 @@ func tick(ctx: DotNpcAiContext) -> void:
 			break
 
 		if not _states.has(next):
-			DotLog.warn(CHANNEL, "a transition names a state that does not exist", {
+			GSLog.warn(CHANNEL, "a transition names a state that does not exist", {
 				"from": String(_current),
 				"to": String(next),
 			})
@@ -116,7 +116,7 @@ func tick(ctx: DotNpcAiContext) -> void:
 		# swallowed, because the alternative is an NPC that vibrates between two
 		# behaviours and a server whose tick is mysteriously long.
 		thrash_count += 1
-		DotLog.warn(CHANNEL, "a state machine hit its transition cap", {
+		GSLog.warn(CHANNEL, "a state machine hit its transition cap", {
 			"state": String(_current),
 			"cap": max_transitions_per_tick,
 		})
@@ -145,7 +145,7 @@ func describe_lines(now: float = 0.0) -> PackedStringArray:
 	out.append("transitions  %d, thrash %d" % [transition_count, thrash_count])
 
 	for id in _states:
-		var state: DotNpcAiState = _states[id]
+		var state: GSNpcAiState = _states[id]
 		out.append("  %s%-14s %d exits" % [
 			"* " if id == _current else "  ", String(id), state.transitions.size()
 		])

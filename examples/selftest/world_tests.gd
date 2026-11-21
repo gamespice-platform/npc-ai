@@ -8,25 +8,25 @@ func _test_squad_on_real_npcs() -> void:
 
 	var floor_body := _floor()
 	var spawner := _spawner()
-	var squads := DotNpcAiSquads.new()
+	var squads := GSNpcAiSquads.new()
 	squads.attach(spawner)
 
 	# A spotter in range and a second one forty metres away, out of its sight.
 	var spotter := spawner.spawn(&"soldier", Vector3(0, 0, 0))
 	var distant := spawner.spawn(&"soldier", Vector3(40, 0, 0))
-	var a := spotter.brain as DotNpcAiBrain
-	var b := distant.brain as DotNpcAiBrain
+	var a := spotter.brain as GSNpcAiBrain
+	var b := distant.brain as GSNpcAiBrain
 
 	_check(a.squad != null and a.squad == b.squad, "a squad named in the catalogue is joined")
 	_check(a.character.id == &"hard", "with the catalogue's character")
 
-	spawner.set_candidates([DotNpcSenses.Candidate.new(&"p", Vector3(-6, 0, 0), &"player")])
+	spawner.set_candidates([GSNpcSenses.Candidate.new(&"p", Vector3(-6, 0, 0), &"player")])
 	for i in 3:
 		spawner.tick(1.0 / 60.0)
 
 	_check(a.npc.has_target() and not b.npc.has_target(), "only the near one can see them")
 	var told := b.memory.get_entry(&"p", b.context.now)
-	_check(told != null and told.source == DotNpcAiMemory.Source.SQUAD,
+	_check(told != null and told.source == GSNpcAiMemory.Source.SQUAD,
 		"but the far one knows where they are, second-hand")
 
 	var start := _flat(distant.position(), Vector3(-6, 0, 0))
@@ -41,7 +41,7 @@ func _test_squad_on_real_npcs() -> void:
 	spawner.free()
 
 	var spawner2 := _spawner()
-	DotNpcAiSquads.new().attach(spawner2)
+	GSNpcAiSquads.new().attach(spawner2)
 	_squad_ring(spawner2)
 
 
@@ -54,21 +54,21 @@ func _test_squad_on_real_npcs() -> void:
 	_done()
 
 
-func _squad_ring(spawner2: DotNpcSpawner) -> void:
+func _squad_ring(spawner2: GSNpcSpawner) -> void:
 
 	var player := Vector3(0, 0, -12)
-	var soldiers: Array[DotNpcInstance] = []
+	var soldiers: Array[GSNpcInstance] = []
 	for x in [-3.0, 0.0, 3.0, 6.0]:
 		soldiers.append(spawner2.spawn(&"soldier", Vector3(x, 0, 0)))
 
-	spawner2.set_candidates([DotNpcSenses.Candidate.new(&"p", player, &"player")])
+	spawner2.set_candidates([GSNpcSenses.Candidate.new(&"p", player, &"player")])
 
 	for i in 360:
 		spawner2.tick(1.0 / 60.0)
 
-	var holders: Array[DotNpcInstance] = []
+	var holders: Array[GSNpcInstance] = []
 	for s in soldiers:
-		if (s.brain as DotNpcAiBrain).holds_attack_slot():
+		if (s.brain as GSNpcAiBrain).holds_attack_slot():
 			holders.append(s)
 
 	_check(holders.size() == 1, "one attack slot, one attacker", "%d hold it" % holders.size())
@@ -96,7 +96,7 @@ func _squad_ring(spawner2: DotNpcSpawner) -> void:
 	look.y = 0.0
 	var behind := 0
 	for s in soldiers:
-		if s != attacker and DotNpcAiTactics.angle_from_behind(player, look.normalized(), s.position()) < PI * 0.5:
+		if s != attacker and GSNpcAiTactics.angle_from_behind(player, look.normalized(), s.position()) < PI * 0.5:
 			behind += 1
 	_check(behind >= 1, "and they have worked round the side the player is not looking at",
 		"%d behind the player's shoulder line" % behind)
@@ -107,13 +107,13 @@ func _squad_ring(spawner2: DotNpcSpawner) -> void:
 
 	var next := 0
 	for s in spawner2.all_npcs():
-		if (s.brain as DotNpcAiBrain).holds_attack_slot():
+		if (s.brain as GSNpcAiBrain).holds_attack_slot():
 			next += 1
 	_check(next == 1, "and when the attacker falls, the next one steps in")
 
 
-func _squad_cover(spawner2: DotNpcSpawner) -> void:
-	var builder := DotNpcNavBuilder.new()
+func _squad_cover(spawner2: GSNpcSpawner) -> void:
+	var builder := GSNpcNavBuilder.new()
 	builder.spacing = 2.0
 	builder.add_floor(AABB(Vector3(-12, 0, -12), Vector3(24, 0, 24)), 0.0)
 	builder.add_obstacle(AABB(Vector3(-1, 0, -10), Vector3(2, 3, 20)))
@@ -122,8 +122,8 @@ func _squad_cover(spawner2: DotNpcSpawner) -> void:
 
 	var threat := Vector3(-10, 0, 0)
 	var survivors := spawner2.all_npcs()
-	var first := (survivors[0].brain as DotNpcAiBrain).find_cover(threat)
-	var second := (survivors[1].brain as DotNpcAiBrain).find_cover(threat)
+	var first := (survivors[0].brain as GSNpcAiBrain).find_cover(threat)
+	var second := (survivors[1].brain as GSNpcAiBrain).find_cover(threat)
 	_check(adopted.ok and first != Vector3.INF, "an NPC finds cover from a threat")
 	var spot_index := nav.cover_positions.find(first)
 	var covers := spot_index >= 0 and nav.cover_normals[spot_index].dot(
@@ -137,77 +137,77 @@ func _squad_cover(spawner2: DotNpcSpawner) -> void:
 func _test_heatmap() -> void:
 	_section("learning where players go")
 
-	var heat := DotNpcAiHeatmap.new()
+	var heat := GSNpcAiHeatmap.new()
 	heat.cell_size = 3.0
 	heat.half_life = 10.0
 
 	for i in 20:
-		heat.record(DotNpcAiHeatmap.TRAFFIC, Vector3(10, 0, 0), 0.0)
-	heat.record(DotNpcAiHeatmap.TRAFFIC, Vector3(-10, 0, 0), 0.0)
+		heat.record(GSNpcAiHeatmap.TRAFFIC, Vector3(10, 0, 0), 0.0)
+	heat.record(GSNpcAiHeatmap.TRAFFIC, Vector3(-10, 0, 0), 0.0)
 
 	_check(
-		is_equal_approx(heat.value_at(DotNpcAiHeatmap.TRAFFIC, Vector3(10.5, 0, 0.5), 0.0), 20.0),
+		is_equal_approx(heat.value_at(GSNpcAiHeatmap.TRAFFIC, Vector3(10.5, 0, 0.5), 0.0), 20.0),
 		"recording adds up in a cell"
 	)
 	_check(
-		is_equal_approx(heat.value_at(DotNpcAiHeatmap.TRAFFIC, Vector3(10, 0, 0), 10.0), 10.0),
+		is_equal_approx(heat.value_at(GSNpcAiHeatmap.TRAFFIC, Vector3(10, 0, 0), 10.0), 10.0),
 		"and halves every half-life"
 	)
 
-	var hot := heat.hottest(DotNpcAiHeatmap.TRAFFIC, Vector3.ZERO, 30.0, 0.0, 2)
+	var hot := heat.hottest(GSNpcAiHeatmap.TRAFFIC, Vector3.ZERO, 30.0, 0.0, 2)
 	_check(hot.size() == 2 and hot[0].distance_to(Vector3(10.5, 0, 1.5)) < 3.0,
 		"the hottest place comes first", str(hot))
-	_check(heat.hottest(DotNpcAiHeatmap.TRAFFIC, Vector3(100, 0, 0), 5.0, 0.0).is_empty(),
+	_check(heat.hottest(GSNpcAiHeatmap.TRAFFIC, Vector3(100, 0, 0), 5.0, 0.0).is_empty(),
 		"and nothing is hot where nobody has been")
 
 	# A corridor: traffic heavier to the east. Somebody waiting in it watches the east.
-	var lane := DotNpcAiHeatmap.new()
+	var lane := GSNpcAiHeatmap.new()
 	for x in range(0, 8):
 		for i in x + 1:
-			lane.record(DotNpcAiHeatmap.TRAFFIC, Vector3(x * 3.0 + 1.0, 0, 1.0), 0.0)
-	var flow := lane.flow_at(DotNpcAiHeatmap.TRAFFIC, Vector3(10, 0, 1), 0.0)
+			lane.record(GSNpcAiHeatmap.TRAFFIC, Vector3(x * 3.0 + 1.0, 0, 1.0), 0.0)
+	var flow := lane.flow_at(GSNpcAiHeatmap.TRAFFIC, Vector3(10, 0, 1), 0.0)
 	_check(flow.x > 0.9, "the flow points to where the traffic comes from", str(flow))
 
 	var path := "user://npc_ai_selftest_heat.json"
 	var saved := heat.save(path, 0.0)
-	var loaded := DotNpcAiHeatmap.load_from(path, 500.0)
+	var loaded := GSNpcAiHeatmap.load_from(path, 500.0)
 	_check(saved.ok and loaded.ok, "a heat map is saved and loaded")
 	_check(
 		loaded.ok and is_equal_approx(
-			(loaded.value as DotNpcAiHeatmap).value_at(DotNpcAiHeatmap.TRAFFIC, Vector3(10, 0, 0), 500.0), 20.0
+			(loaded.value as GSNpcAiHeatmap).value_at(GSNpcAiHeatmap.TRAFFIC, Vector3(10, 0, 0), 500.0), 20.0
 		),
 		"carrying its weights onto a clock that started again"
 	)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
-	_check(DotNpcAiHeatmap.load_from("user://never_played.json").ok, "a map nobody has played is an empty one, not an error")
-	_check(not DotNpcAiHeatmap.from_dictionary({"cell_size": 0.0}).ok, "a cell size of nothing is refused")
+	_check(GSNpcAiHeatmap.load_from("user://never_played.json").ok, "a map nobody has played is an empty one, not an error")
+	_check(not GSNpcAiHeatmap.from_dictionary({"cell_size": 0.0}).ok, "a cell size of nothing is refused")
 
-	var small := DotNpcAiHeatmap.new()
+	var small := GSNpcAiHeatmap.new()
 	small.capacity = 4
 	for i in 10:
-		small.record(DotNpcAiHeatmap.TRAFFIC, Vector3(i * 10.0, 0, 0), 0.0, float(i + 1))
-	_check(small.cell_count(DotNpcAiHeatmap.TRAFFIC) <= 5, "and it is bounded, the coldest going first")
-	_check(small.value_at(DotNpcAiHeatmap.TRAFFIC, Vector3(90, 0, 0), 0.0) == 10.0, "keeping the hottest")
+		small.record(GSNpcAiHeatmap.TRAFFIC, Vector3(i * 10.0, 0, 0), 0.0, float(i + 1))
+	_check(small.cell_count(GSNpcAiHeatmap.TRAFFIC) <= 5, "and it is bounded, the coldest going first")
+	_check(small.value_at(GSNpcAiHeatmap.TRAFFIC, Vector3(90, 0, 0), 0.0) == 10.0, "keeping the hottest")
 
 	# The keeper: per map, across a change of map and back, and a reload that does not save.
 	var dir := "user://npc_ai_selftest_heat"
-	var keeper := DotNpcAiHeatKeeper.new(dir, "test")
+	var keeper := GSNpcAiHeatKeeper.new(dir, "test")
 	keeper.save_every = 1000.0
 	for i in 60:
 		keeper.tick(1.0 / 60.0, &"a", [Vector3(3, 0, 3)], float(i) / 60.0)
-	_check(keeper.heatmap.value_at(DotNpcAiHeatmap.TRAFFIC, Vector3(3, 0, 3), 1.0) > 0.5,
+	_check(keeper.heatmap.value_at(GSNpcAiHeatmap.TRAFFIC, Vector3(3, 0, 3), 1.0) > 0.5,
 		"the keeper samples players on its interval")
 
 	keeper.tick(1.0 / 60.0, &"b", [], 1.0)
-	_check(keeper.map_id == &"b" and keeper.heatmap.cell_count(DotNpcAiHeatmap.TRAFFIC) == 0,
+	_check(keeper.map_id == &"b" and keeper.heatmap.cell_count(GSNpcAiHeatmap.TRAFFIC) == 0,
 		"a new map starts with what that map has learned, not the last one's")
 	keeper.tick(1.0 / 60.0, &"a", [], 1.1)
-	_check(keeper.heatmap.value_at(DotNpcAiHeatmap.TRAFFIC, Vector3(3, 0, 3), 1.1) > 0.5,
+	_check(keeper.heatmap.value_at(GSNpcAiHeatmap.TRAFFIC, Vector3(3, 0, 3), 1.1) > 0.5,
 		"and going back to the first map gets its learning back from disk")
 
-	keeper.heatmap = DotNpcAiHeatmap.new()
+	keeper.heatmap = GSNpcAiHeatmap.new()
 	keeper.adopt(&"a", 1.2)
-	_check(keeper.heatmap.value_at(DotNpcAiHeatmap.TRAFFIC, Vector3(3, 0, 3), 1.2) > 0.5,
+	_check(keeper.heatmap.value_at(GSNpcAiHeatmap.TRAFFIC, Vector3(3, 0, 3), 1.2) > 0.5,
 		"re-adopting the map it holds reloads it without saving over the file first")
 
 	for file in DirAccess.get_files_at(dir):
@@ -221,28 +221,28 @@ func _test_ranged_and_roles() -> void:
 
 	var floor_body := _floor()
 	var spawner := _spawner()
-	DotNpcAiSquads.new().attach(spawner)
+	GSNpcAiSquads.new().attach(spawner)
 
 	var a := spawner.spawn(&"soldier", Vector3(0, 0, 0))
 	var b := spawner.spawn(&"soldier", Vector3(3, 0, 0))
-	var ba := a.brain as DotNpcAiBrain
-	var bb := b.brain as DotNpcAiBrain
+	var ba := a.brain as GSNpcAiBrain
+	var bb := b.brain as GSNpcAiBrain
 
 	var runner := Vector3(0, 0, -15)
 	for i in 30:
 		runner += Vector3(5.0 / 60.0, 0, 0)
-		spawner.set_candidates([DotNpcSenses.Candidate.new(&"p", runner, &"player")])
+		spawner.set_candidates([GSNpcSenses.Candidate.new(&"p", runner, &"player")])
 		spawner.tick(1.0 / 60.0)
 
-	_check(ba.claim_role(DotNpcAiBrain.ROLE_SUPPRESS, 1) != bb.claim_role(DotNpcAiBrain.ROLE_SUPPRESS, 1),
+	_check(ba.claim_role(GSNpcAiBrain.ROLE_SUPPRESS, 1) != bb.claim_role(GSNpcAiBrain.ROLE_SUPPRESS, 1),
 		"one role of one place goes to one of two")
 
-	var holder: DotNpcAiBrain = ba if ba.holds_role(DotNpcAiBrain.ROLE_SUPPRESS) else bb
-	var other: DotNpcAiBrain = bb if holder == ba else ba
-	spawner.set_candidates([DotNpcSenses.Candidate.new(&"q", Vector3(0, 0, 5), &"player")])
+	var holder: GSNpcAiBrain = ba if ba.holds_role(GSNpcAiBrain.ROLE_SUPPRESS) else bb
+	var other: GSNpcAiBrain = bb if holder == ba else ba
+	spawner.set_candidates([GSNpcSenses.Candidate.new(&"q", Vector3(0, 0, 5), &"player")])
 	for i in 200:
 		spawner.tick(1.0 / 60.0)
-	_check(other.claim_role(DotNpcAiBrain.ROLE_SUPPRESS, 1) and holder.npc.target_id == &"q",
+	_check(other.claim_role(GSNpcAiBrain.ROLE_SUPPRESS, 1) and holder.npc.target_id == &"q",
 		"and a new target lets go of every role on the old one")
 
 	_ranged_aim_facing_gunner(spawner, a, b, ba)
@@ -253,9 +253,9 @@ func _test_ranged_and_roles() -> void:
 	_done()
 
 
-func _ranged_aim_facing_gunner(spawner: DotNpcSpawner, a: DotNpcInstance, b: DotNpcInstance, ba: DotNpcAiBrain) -> void:
+func _ranged_aim_facing_gunner(spawner: GSNpcSpawner, a: GSNpcInstance, b: GSNpcInstance, ba: GSNpcAiBrain) -> void:
 	# Aim. A nightmare leads a runner by what it SAW of them.
-	var shooter := DotNpcAiCharacter.nightmare()
+	var shooter := GSNpcAiCharacter.nightmare()
 	shooter.aim_accuracy = 1.0
 	shooter.aim_skill = 1.0
 	shooter.fire_throttle = 1.0
@@ -263,7 +263,7 @@ func _ranged_aim_facing_gunner(spawner: DotNpcSpawner, a: DotNpcInstance, b: Dot
 	var moving := Vector3(0, 0, -15)
 	for i in 30:
 		moving += Vector3(5.0 / 60.0, 0, 0)
-		spawner.set_candidates([DotNpcSenses.Candidate.new(&"m", moving, &"player")])
+		spawner.set_candidates([GSNpcSenses.Candidate.new(&"m", moving, &"player")])
 		spawner.tick(1.0 / 60.0)
 	var muzzle := a.position()
 	var aimed := ba.aim_solution(muzzle, 30.0)
@@ -279,7 +279,7 @@ func _ranged_aim_facing_gunner(spawner: DotNpcSpawner, a: DotNpcInstance, b: Dot
 	_check(not ba.ready_to_fire(muzzle + Vector3(0, 1, 0)), "it cannot fire at what it is not facing")
 
 	for i in 120:
-		spawner.set_candidates([DotNpcSenses.Candidate.new(&"m", moving, &"player")])
+		spawner.set_candidates([GSNpcSenses.Candidate.new(&"m", moving, &"player")])
 		spawner.tick(1.0 / 60.0)
 		ba.face(moving - a.position())
 	_check(ba.ready_to_fire(a.position() + Vector3(0, 1, 0), 15.0),
@@ -295,10 +295,10 @@ func _ranged_aim_facing_gunner(spawner: DotNpcSpawner, a: DotNpcInstance, b: Dot
 
 	# A gunner, by its own tree: it backs off into its band and fires once it faces them.
 	var gun := spawner.spawn(&"gunner", Vector3(-20, 0, 20))
-	var bgun := gun.brain as DotNpcAiBrain
+	var bgun := gun.brain as GSNpcAiBrain
 	var still := gun.position() + Vector3(0, 0, -4)
 	for i in 240:
-		spawner.set_candidates([DotNpcSenses.Candidate.new(&"s", still, &"player")])
+		spawner.set_candidates([GSNpcSenses.Candidate.new(&"s", still, &"player")])
 		spawner.tick(1.0 / 60.0)
 	var kept := _flat(gun.position(), still)
 	_check(kept >= 7.0 and kept <= 15.0, "a gunner backs off into its range band",
@@ -312,14 +312,14 @@ func _ranged_aim_facing_gunner(spawner: DotNpcSpawner, a: DotNpcInstance, b: Dot
 func _ranged_patrol() -> void:
 	# Patrolling what players use.
 	var spawner2 := _spawner()
-	var heat := DotNpcAiHeatmap.new()
+	var heat := GSNpcAiHeatmap.new()
 	heat.attach(spawner2)
 	var hot_spot := Vector3(12, 0, -9)
 	for i in 50:
-		heat.record(DotNpcAiHeatmap.TRAFFIC, hot_spot, 0.0)
+		heat.record(GSNpcAiHeatmap.TRAFFIC, hot_spot, 0.0)
 
 	var guard := spawner2.spawn(&"soldier", Vector3(0, 0, 0))
-	var bg := guard.brain as DotNpcAiBrain
+	var bg := guard.brain as GSNpcAiBrain
 	spawner2.set_candidates([])
 	for i in 300:
 		spawner2.tick(1.0 / 60.0)
@@ -327,16 +327,16 @@ func _ranged_patrol() -> void:
 	_check(_flat(guard.position(), hot_spot) < 3.0, "with nobody to fight, a smart NPC goes where players go",
 		"%.1f m from the busiest cell" % _flat(guard.position(), hot_spot))
 
-	bg.character = DotNpcAiCharacter.easy()
+	bg.character = GSNpcAiCharacter.easy()
 	spawner2.tick(1.0 / 60.0)
-	_check(bg.patrol_hot(bg.context, 4.0) == DotNpcAiNode.Status.FAILURE,
+	_check(bg.patrol_hot(bg.context, 4.0) == GSNpcAiNode.Status.FAILURE,
 		"and a dull one does not know the map")
 
 	_world.remove_child(spawner2)
 	spawner2.free()
 
 
-## The one cvar shape [method DotNpcAiNavAnnotator.read_cvars] reads (`name`, `get_string`),
+## The one cvar shape [method GSNpcAiNavAnnotator.read_cvars] reads (`name`, `get_string`),
 ## as GameSpice Server's console variable has it.
 class NavCvar:
 	extends RefCounted
@@ -360,7 +360,7 @@ static func _within(p: Vector3, box: AABB, margin: float = 0.0) -> bool:
 	return p.x >= box.position.x - margin and p.x <= box.end.x + margin and p.z >= box.position.z - margin and p.z <= box.end.z + margin
 
 
-static func _links_where(a: DotNpcAiNavAnnotations, kind: int, test: Callable) -> int:
+static func _links_where(a: GSNpcAiNavAnnotations, kind: int, test: Callable) -> int:
 	var n := 0
 	for link in a.links_of(kind):
 		if test.call(link["from"], link["to"]):
@@ -368,8 +368,8 @@ static func _links_where(a: DotNpcAiNavAnnotations, kind: int, test: Callable) -
 	return n
 
 
-func _annotator(mesh: NavigationMesh, level: Node3D) -> DotNpcAiNavAnnotator:
-	var job := DotNpcAiNavAnnotator.new(mesh, level.get_world_3d())
+func _annotator(mesh: NavigationMesh, level: Node3D) -> GSNpcAiNavAnnotator:
+	var job := GSNpcAiNavAnnotator.new(mesh, level.get_world_3d())
 	job.agent_radius = 0.35
 	job.stand_height = 1.8
 	job.climb = 0.4
@@ -379,20 +379,20 @@ func _annotator(mesh: NavigationMesh, level: Node3D) -> DotNpcAiNavAnnotator:
 
 func _test_nav_hand_links() -> void:
 	_section("hand-made nav links")
-	var h := DotNpcAiNavHandLinks.new()
-	var a := h.add(Vector3(0, 0, 0), Vector3(0, 4, 0), DotNpcAiNavAnnotations.LINK_LADDER, -1.0, 0, true)
-	var b := h.add(Vector3(5, 0, 0), Vector3(9, -2, 0), DotNpcAiNavAnnotations.LINK_DROP)
+	var h := GSNpcAiNavHandLinks.new()
+	var a := h.add(Vector3(0, 0, 0), Vector3(0, 4, 0), GSNpcAiNavAnnotations.LINK_LADDER, -1.0, 0, true)
+	var b := h.add(Vector3(5, 0, 0), Vector3(9, -2, 0), GSNpcAiNavAnnotations.LINK_DROP)
 	_check(a == 1 and b == 3 and h.links.size() == 3, "a two-way link adds both directions with their own ids")
 	_check(h.add(Vector3.ONE, Vector3.ONE, 0) == 0 and h.add(Vector3.ZERO, Vector3.UP, -1) == 0, "a zero-length or negative-kind link is refused")
 	_check(is_equal_approx(float(h.get_link(a)["cost"]), 4.0), "the default cost is the length")
 	_check(h.nearest(Vector3(8.5, -2, 0)) == b and h.nearest(Vector3(50, 0, 0)) == 0, "nearest finds a link by either end, within range only")
-	var back := DotNpcAiNavHandLinks.from_dict(JSON.parse_string(JSON.stringify(h.to_dict())))
-	_check(back.ok and (back.value as DotNpcAiNavHandLinks).links.size() == 3, "it round-trips through JSON")
-	var r: DotNpcAiNavHandLinks = back.value
+	var back := GSNpcAiNavHandLinks.from_dict(JSON.parse_string(JSON.stringify(h.to_dict())))
+	_check(back.ok and (back.value as GSNpcAiNavHandLinks).links.size() == 3, "it round-trips through JSON")
+	var r: GSNpcAiNavHandLinks = back.value
 	_check(r.remove(a) and not r.remove(a) and r.links.size() == 2, "remove takes one link once")
 	_check(r.add(Vector3.ZERO, Vector3.UP * 3.0, 3) == 4, "ids are not reused after a load or a remove")
-	_check(not DotNpcAiNavHandLinks.from_dict({"version": 99}).ok and not DotNpcAiNavHandLinks.from_dict({"version": 1, "links": [[1]]}).ok, "another version or a short row is refused")
-	var ann := DotNpcAiNavAnnotations.new()
+	_check(not GSNpcAiNavHandLinks.from_dict({"version": 99}).ok and not GSNpcAiNavHandLinks.from_dict({"version": 1, "links": [[1]]}).ok, "another version or a short row is refused")
+	var ann := GSNpcAiNavAnnotations.new()
 	_check(h.apply_to(ann) == 3 and h.apply_to(ann) == 0 and ann.links.size() == 3, "apply_to copies once and never doubles")
 	_done()
 
@@ -415,7 +415,7 @@ func _test_nav_annotations() -> void:
 	if not res.ok:
 		level.queue_free()
 		return
-	var a: DotNpcAiNavAnnotations = res.value
+	var a: GSNpcAiNavAnnotations = res.value
 	_check(a.key == key and key.length() == 64, "and the result carries the key it was asked for")
 
 	var low := NavToy.LOW_PLATFORM
@@ -428,19 +428,19 @@ func _test_nav_annotations() -> void:
 	var on_west: Callable = top_of.call(NavToy.GAP_WEST)
 	var on_east: Callable = top_of.call(NavToy.GAP_EAST)
 
-	_check(_links_where(a, DotNpcAiNavAnnotations.LINK_JUMP_UP, func(f: Vector3, t: Vector3) -> bool: return on_floor.call(f) and on_low.call(t)) > 0,
+	_check(_links_where(a, GSNpcAiNavAnnotations.LINK_JUMP_UP, func(f: Vector3, t: Vector3) -> bool: return on_floor.call(f) and on_low.call(t)) > 0,
 		"a jump up onto the waist-high platform")
-	_check(_links_where(a, DotNpcAiNavAnnotations.LINK_DROP, func(f: Vector3, t: Vector3) -> bool: return on_low.call(f) and on_floor.call(t)) > 0,
+	_check(_links_where(a, GSNpcAiNavAnnotations.LINK_DROP, func(f: Vector3, t: Vector3) -> bool: return on_low.call(f) and on_floor.call(t)) > 0,
 		"and a drop off it")
-	_check(_links_where(a, DotNpcAiNavAnnotations.LINK_DROP, func(f: Vector3, t: Vector3) -> bool: return on_balcony.call(f) and on_floor.call(t)) > 0,
+	_check(_links_where(a, GSNpcAiNavAnnotations.LINK_DROP, func(f: Vector3, t: Vector3) -> bool: return on_balcony.call(f) and on_floor.call(t)) > 0,
 		"a drop off the balcony")
-	_check(_links_where(a, DotNpcAiNavAnnotations.LINK_JUMP_UP, func(_f: Vector3, t: Vector3) -> bool: return on_balcony.call(t)) == 0,
+	_check(_links_where(a, GSNpcAiNavAnnotations.LINK_JUMP_UP, func(_f: Vector3, t: Vector3) -> bool: return on_balcony.call(t)) == 0,
 		"and no jump up onto it: three metres is above the jump")
-	_check(_links_where(a, DotNpcAiNavAnnotations.LINK_JUMP_GAP, func(f: Vector3, t: Vector3) -> bool: return on_west.call(f) and on_east.call(t)) > 0,
+	_check(_links_where(a, GSNpcAiNavAnnotations.LINK_JUMP_GAP, func(f: Vector3, t: Vector3) -> bool: return on_west.call(f) and on_east.call(t)) > 0,
 		"a jump across the gap one way")
-	_check(_links_where(a, DotNpcAiNavAnnotations.LINK_JUMP_GAP, func(f: Vector3, t: Vector3) -> bool: return on_east.call(f) and on_west.call(t)) > 0,
+	_check(_links_where(a, GSNpcAiNavAnnotations.LINK_JUMP_GAP, func(f: Vector3, t: Vector3) -> bool: return on_east.call(f) and on_west.call(t)) > 0,
 		"and the other")
-	var floor_gaps := _links_where(a, DotNpcAiNavAnnotations.LINK_JUMP_GAP, func(f: Vector3, t: Vector3) -> bool: return on_floor.call(f) or on_floor.call(t))
+	var floor_gaps := _links_where(a, GSNpcAiNavAnnotations.LINK_JUMP_GAP, func(f: Vector3, t: Vector3) -> bool: return on_floor.call(f) or on_floor.call(t))
 	_check(floor_gaps == 0, "no jump across from the floor to the floor (a corner is not a gap)", "%d" % floor_gaps)
 
 	var in_room := false
@@ -458,7 +458,7 @@ func _test_nav_annotations() -> void:
 	_done()
 
 
-func _nav_checks_kinds(a: DotNpcAiNavAnnotations, mesh: NavigationMesh, job: DotNpcAiNavAnnotator) -> void:
+func _nav_checks_kinds(a: GSNpcAiNavAnnotations, mesh: NavigationMesh, job: GSNpcAiNavAnnotator) -> void:
 	# The bake walks the floor inside a solid block tall enough to stand in; that floor is
 	# left out of what watchers, routes and spots are drawn from.
 	var in_solid := 0
@@ -496,26 +496,26 @@ func _nav_checks_kinds(a: DotNpcAiNavAnnotations, mesh: NavigationMesh, job: Dot
 	_check(not behind.is_empty() and (behind["normal"] as Vector3).x < -0.5, "a spot's normal points away from its wall")
 
 
-func _nav_checks_data(a: DotNpcAiNavAnnotations, mesh: NavigationMesh, level: Node3D, job: DotNpcAiNavAnnotator, key: String) -> void:
+func _nav_checks_data(a: GSNpcAiNavAnnotations, mesh: NavigationMesh, level: Node3D, job: GSNpcAiNavAnnotator, key: String) -> void:
 	# Kept as data: a round trip, a file, and the ways a file is refused.
-	var back := DotNpcAiNavAnnotations.from_dict(JSON.parse_string(JSON.stringify(a.to_dict())))
+	var back := GSNpcAiNavAnnotations.from_dict(JSON.parse_string(JSON.stringify(a.to_dict())))
 	# Stats are the run's measurements and come back as JSON numbers (floats); the rest is exact.
 	var before := a.to_dict()
 	before.erase("stats")
-	var after: Dictionary = (back.value as DotNpcAiNavAnnotations).to_dict() if back.ok else {}
+	var after: Dictionary = (back.value as GSNpcAiNavAnnotations).to_dict() if back.ok else {}
 	after.erase("stats")
 	_check(back.ok and JSON.stringify(after) == JSON.stringify(before), "the annotations survive JSON")
 	var path := "user://nav_selftest/%s.json" % a.key
 	_check(a.save(path).ok, "and are saved")
-	_check(DotNpcAiNavAnnotations.load_file(path, a.key).ok, "and load for their own key")
-	var wrong := DotNpcAiNavAnnotations.load_file(path, "0".repeat(64))
-	_check(not wrong.ok and wrong.error.code == DotError.CODE_INTEGRITY, "and are refused for another")
-	var missing := DotNpcAiNavAnnotations.load_file("user://nav_selftest/none.json")
-	_check(not missing.ok and missing.error.code == DotError.CODE_IO, "a missing file is a failure, not empty annotations")
+	_check(GSNpcAiNavAnnotations.load_file(path, a.key).ok, "and load for their own key")
+	var wrong := GSNpcAiNavAnnotations.load_file(path, "0".repeat(64))
+	_check(not wrong.ok and wrong.error.code == GSError.CODE_INTEGRITY, "and are refused for another")
+	var missing := GSNpcAiNavAnnotations.load_file("user://nav_selftest/none.json")
+	_check(not missing.ok and missing.error.code == GSError.CODE_IO, "a missing file is a failure, not empty annotations")
 	var old := a.to_dict()
-	old["version"] = DotNpcAiNavAnnotations.VERSION + 1
-	var stale := DotNpcAiNavAnnotations.from_dict(old)
-	_check(not stale.ok and stale.error.code == DotError.CODE_VERSION, "and so is one of another version")
+	old["version"] = GSNpcAiNavAnnotations.VERSION + 1
+	var stale := GSNpcAiNavAnnotations.from_dict(old)
+	_check(not stale.ok and stale.error.code == GSError.CODE_VERSION, "and so is one of another version")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 
 	# The key, and the run in slices.
@@ -528,7 +528,7 @@ func _nav_checks_data(a: DotNpcAiNavAnnotations, mesh: NavigationMesh, level: No
 	var steps := 0
 	while sliced.step():
 		steps += 1
-	var sliced_a: DotNpcAiNavAnnotations = sliced.result.value if sliced.result != null and sliced.result.ok else null
+	var sliced_a: GSNpcAiNavAnnotations = sliced.result.value if sliced.result != null and sliced.result.ok else null
 	_check(sliced_a != null and steps > 50, "run three items at a time it takes many steps", "%d" % steps)
 	if sliced_a != null:
 		var x := a.to_dict()
@@ -543,24 +543,24 @@ func _nav_checks_data(a: DotNpcAiNavAnnotations, mesh: NavigationMesh, level: No
 func _nav_checks_cvars(mesh: NavigationMesh, level: Node3D, key: String) -> void:
 	# What a game adds, and what a server tunes.
 	var declared := _annotator(mesh, level)
-	declared.declare(Vector3(-18, 0.2, -13), Vector3(18, 0.2, 13), DotNpcAiNavAnnotations.LINK_TELEPORT, 2.0)
+	declared.declare(Vector3(-18, 0.2, -13), Vector3(18, 0.2, 13), GSNpcAiNavAnnotations.LINK_TELEPORT, 2.0)
 	_check(declared.cache_key() != key, "a declared link changes the key")
-	var with_teleport: DotNpcAiNavAnnotations = declared.run_to_completion().value
-	_check(with_teleport.links_of(DotNpcAiNavAnnotations.LINK_TELEPORT).size() == 1, "and is in the result as declared")
+	var with_teleport: GSNpcAiNavAnnotations = declared.run_to_completion().value
+	_check(with_teleport.links_of(GSNpcAiNavAnnotations.LINK_TELEPORT).size() == 1, "and is in the result as declared")
 	var made: Array = []
 	var add := func(cvar_name: String, default_value: String, _description: String, _flags: int) -> Object:
 		var cv := NavCvar.new()
 		cv.name = cvar_name
-		cv.value = "0.5" if cvar_name == DotNpcAiNavAnnotator.CVAR_JUMP_UP else default_value
+		cv.value = "0.5" if cvar_name == GSNpcAiNavAnnotator.CVAR_JUMP_UP else default_value
 		made.append(cv)
 		return cv
-	var cvars := DotNpcAiNavAnnotator.bind_cvars(add)
+	var cvars := GSNpcAiNavAnnotator.bind_cvars(add)
 	_check(cvars.size() == 4 and made.size() == 4 and (made[0] as NavCvar).ranged, "four ranged cvars are registered")
 	var tuned := _annotator(mesh, level)
 	tuned.read_cvars(cvars)
 	_check(is_equal_approx(tuned.jump_up, 0.5) and is_equal_approx(tuned.drop_max, 6.0), "and read into an annotator")
-	var short: DotNpcAiNavAnnotations = tuned.run_to_completion().value
-	_check(short.links_of(DotNpcAiNavAnnotations.LINK_JUMP_UP).is_empty(), "where a half-metre jump links no jump up onto the platform")
+	var short: GSNpcAiNavAnnotations = tuned.run_to_completion().value
+	_check(short.links_of(GSNpcAiNavAnnotations.LINK_JUMP_UP).is_empty(), "where a half-metre jump links no jump up onto the platform")
 
 
 ## No one step of the annotator may be longer than the budget it is given: a server steps it inside a frame.
@@ -599,7 +599,7 @@ func _test_nav_annotator_budget() -> void:
 		level.queue_free()
 		_done()
 		return
-	var a: DotNpcAiNavAnnotations = job.result.value
+	var a: GSNpcAiNavAnnotations = job.result.value
 	# One item is the least a step can do and CI is noisy, so two budgets are allowed. The old
 	# code's longest step here was several times over that.
 	_check(slowest <= budget * 2.0, "no step is much longer than the %.0f ms budget" % budget,
@@ -613,7 +613,7 @@ func _test_nav_annotator_budget() -> void:
 	counted.seeds = PackedVector3Array([spawn])
 	counted.slice_ms = 0.0
 	counted.slice = 5000
-	var whole: DotNpcAiNavAnnotations = counted.run_to_completion().value
+	var whole: GSNpcAiNavAnnotations = counted.run_to_completion().value
 	var x := a.to_dict()
 	var y := whole.to_dict()
 	x.erase("stats")
@@ -625,7 +625,7 @@ func _test_nav_annotator_budget() -> void:
 	var plain := _annotator(mesh, level)
 	plain.seeds = PackedVector3Array([spawn])
 	plain.reference = true
-	var slow: DotNpcAiNavAnnotations = plain.run_to_completion().value
+	var slow: GSNpcAiNavAnnotations = plain.run_to_completion().value
 	var z := slow.to_dict()
 	z.erase("stats")
 	_check(JSON.stringify(x).md5_text() == JSON.stringify(z).md5_text(), "and the same as the plain reference run (every link scanned, a query per ray)",
@@ -654,7 +654,7 @@ func _check_link_index(mesh: NavigationMesh, level: Node3D) -> void:
 	_check(not twin._has_link_near(Vector3(1.012, 0.0, 0.0), Vector3(5.0, 0.0, 0.5), 0), "and forgets links once the list is replaced")
 
 
-func _check_cached_triangles(mesh: NavigationMesh, level: Node3D, plain: DotNpcAiNavAnnotator) -> void:
+func _check_cached_triangles(mesh: NavigationMesh, level: Node3D, plain: GSNpcAiNavAnnotator) -> void:
 	# The cached triangle test answers as the plain one, at the corners and just past the edges
 	# of the level's triangles, and of a sliver whose box is not trusted.
 	var asked := 0
@@ -664,7 +664,7 @@ func _check_cached_triangles(mesh: NavigationMesh, level: Node3D, plain: DotNpcA
 	var sliver := _annotator(mesh, level)
 	sliver._add_triangle(Vector3(0.0, 0.0, 0.0), Vector3(10.0, 1.0, 0.05), Vector3(10.0, 0.0, 0.0), 7)
 	sliver._add_triangle(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 1.9), Vector3(1.9, 0.5, 0.0), 8)
-	for job_tris: DotNpcAiNavAnnotator in [plain, sliver]:
+	for job_tris: GSNpcAiNavAnnotator in [plain, sliver]:
 		# Every triangle of a small level; an even spread of a few hundred of a large one.
 		var stride := maxi(1, job_tris._tris.size() / 400)
 		for t in range(0, job_tris._tris.size(), stride):

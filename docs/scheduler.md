@@ -1,10 +1,10 @@
 # The level-of-detail scheduler
 
-`DotNpcAiScheduler` decides which brains think this frame and how long they may take, so a thousand NPCs cost what the ones a player can notice cost. It is opt-in: with no scheduler registered, or one whose config says `enabled: false` (the default), every brain thinks every tick exactly as before.
+`GSNpcAiScheduler` decides which brains think this frame and how long they may take, so a thousand NPCs cost what the ones a player can notice cost. It is opt-in: with no scheduler registered, or one whose config says `enabled: false` (the default), every brain thinks every tick exactly as before.
 
 ## Wiring
 
-The host adds one `DotNpcAiScheduler` node, gives it a `DotNpcAiSchedulerConfig` (`apply_config`), points `players_source` at the players' positions (or puts players in the `players` group) and calls `register_service()`. A `DotNpcAiBrain` finds it on `DotRegistry` when it is bound, registers itself, asks `admit()` before each think and calls `finish()` after. The scheduler's `advance()` runs from an early physics priority; a host that ticks its NPCs elsewhere sets `auto_advance = false` and calls it first.
+The host adds one `GSNpcAiScheduler` node, gives it a `GSNpcAiSchedulerConfig` (`apply_config`), points `players_source` at the players' positions (or puts players in the `players` group) and calls `register_service()`. A `GSNpcAiBrain` finds it on `GSRegistry` when it is bound, registers itself, asks `admit()` before each think and calls `finish()` after. The scheduler's `advance()` runs from an early physics priority; a host that ticks its NPCs elsewhere sets `auto_advance = false` and calls it first.
 
 ## Tiers
 
@@ -37,7 +37,7 @@ A throttled brain keeps walking the last point it steered at (`cruise_between_th
 
 ## Not done
 
-The scheduler is wired by GameSpice Game, not by each game: `DotGameModule.attach_npc_lod(spawner)` builds it behind the `npc_lod*` cvars (default off, listed in the workbench as "NPC level of detail"). Zombie Zone attaches it; the other NPC games call the same one line.
+The scheduler is wired by GameSpice Game, not by each game: `GSGameModule.attach_npc_lod(spawner)` builds it behind the `npc_lod*` cvars (default off, listed in the workbench as "NPC level of detail"). Zombie Zone attaches it; the other NPC games call the same one line.
 
 The other four NPC games have not attached it yet.
 

@@ -1,26 +1,26 @@
-class_name DotNpcAiContext
+class_name GSNpcAiContext
 extends RefCounted
 
 ## Everything one tick of a decision needs, in one object: every node takes it, and a sixth argument would otherwise change fifteen places.
-## [b]It names nothing from GameSpice NPC:[/b] [member agent] is whatever the host drives and [member brain] whatever drives it, so the tree can be lifted into anything; only [DotNpcAiBrain] mentions GameSpice NPC.
+## [b]It names nothing from GameSpice NPC:[/b] [member agent] is whatever the host drives and [member brain] whatever drives it, so the tree can be lifted into anything; only [GSNpcAiBrain] mentions GameSpice NPC.
 
-## What is being decided for. A [code]DotNpcInstance[/code] in the ordinary case.
+## What is being decided for. A [code]GSNpcInstance[/code] in the ordinary case.
 var agent: Object = null
 
-## What is running the decision. A [DotNpcAiBrain] in the ordinary case.
+## What is running the decision. A [GSNpcAiBrain] in the ordinary case.
 var brain: Object = null
 
 ## This agent's memory.
-var blackboard: DotNpcAiBlackboard = null
+var blackboard: GSNpcAiBlackboard = null
 
 ## Who this agent is: reaction time, aim, aggression. Null for a character-less NPC.
 ## On the context, not reached through the brain, because a node two levels down a tree must not need to know which brain runs it.
-var character: DotNpcAiCharacter = null
+var character: GSNpcAiCharacter = null
 
 ## What the NPC noticed this tick. Filled by the brain before anything runs, and read by
-## guards and by [DotNpcAiDecorator.Interrupt]. Never null, so a node can ask without
+## guards and by [GSNpcAiDecorator.Interrupt]. Never null, so a node can ask without
 ## checking — a context built outside a brain simply never has anything set.
-var conditions: DotNpcAiConditions = DotNpcAiConditions.new()
+var conditions: GSNpcAiConditions = GSNpcAiConditions.new()
 
 ## Seconds in this tick.
 var delta: float = 0.0
@@ -36,12 +36,12 @@ var meta: Dictionary = {}
 
 
 static func make(
-	p_agent: Object, p_brain: Object, p_blackboard: DotNpcAiBlackboard = null
-) -> DotNpcAiContext:
-	var ctx := DotNpcAiContext.new()
+	p_agent: Object, p_brain: Object, p_blackboard: GSNpcAiBlackboard = null
+) -> GSNpcAiContext:
+	var ctx := GSNpcAiContext.new()
 	ctx.agent = p_agent
 	ctx.brain = p_brain
-	ctx.blackboard = p_blackboard if p_blackboard != null else DotNpcAiBlackboard.new()
+	ctx.blackboard = p_blackboard if p_blackboard != null else GSNpcAiBlackboard.new()
 	return ctx
 
 

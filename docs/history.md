@@ -4,9 +4,9 @@ Bugs worth recognising if they come back. Every one parsed cleanly; most errored
 
 ## has_reacted() was false for ever
 
-The gate every "act on what you see" branch belongs behind never opened. `has_reacted()` measured a reaction time from `DotNpcInstance.engaged_at`, and dot-npc refreshes that field on every pass in which the target is perceived, which is what it is for. So `now - engaged_at` was about zero on every tick an NPC could see somebody.
+The gate every "act on what you see" branch belongs behind never opened. `has_reacted()` measured a reaction time from `GSNpcInstance.engaged_at`, and dot-npc refreshes that field on every pass in which the target is perceived, which is what it is for. So `now - engaged_at` was about zero on every tick an NPC could see somebody.
 
-Nothing errored: **a bot that never acts on what it sees looks like a bot that is bad rather than one that is broken**, which is why it survived a suite that tested `DotNpcAiCharacter.has_reacted` directly and correctly. The character's arithmetic was right; the field it was handed was wrong. `DotNpcInstance.target_since` was added to dot-npc for it. Found by game-playlot watching a hunter sit in `ALERT` for ever; the suite now asserts that `engaged_at` moves, `target_since` does not, and `has_reacted()` becomes true.
+Nothing errored: **a bot that never acts on what it sees looks like a bot that is bad rather than one that is broken**, which is why it survived a suite that tested `GSNpcAiCharacter.has_reacted` directly and correctly. The character's arithmetic was right; the field it was handed was wrong. `GSNpcInstance.target_since` was added to dot-npc for it. Found by game-playlot watching a hunter sit in `ALERT` for ever; the suite now asserts that `engaged_at` moves, `target_since` does not, and `has_reacted()` becomes true.
 
 ## In the addon
 
@@ -15,7 +15,7 @@ Nothing errored: **a bot that never acts on what it sees looks like a bot that i
 - **A stacked pair was never separated**: a horizontal push between two NPCs one above the other is nothing. Hence `tie_break`.
 - **The brain's clock started at zero**, so late-spawned NPCs ignored cooldowns briefly.
 - **The tie-break read `basis.x` off the node**, which fails once per NPC per tick on a `Node2D`.
-- **dot-npc's `face()` turned every 3D NPC's back to where it was going** (`look_at(position - direction)` points -Z, which `facing()` reads, away). The sight cone pointed behind a chasing monster, and clients never showed it because `DotNpcNetSync.yaw_of` was half a turn out the other way and the two cancelled on screen. Found by this addon's turn-rate check, which was told an NPC turned 180 degrees in one tick. Fixed in dot-npc, whose suite asserts the round trip.
+- **dot-npc's `face()` turned every 3D NPC's back to where it was going** (`look_at(position - direction)` points -Z, which `facing()` reads, away). The sight cone pointed behind a chasing monster, and clients never showed it because `GSNpcNetSync.yaw_of` was half a turn out the other way and the two cancelled on screen. Found by this addon's turn-rate check, which was told an NPC turned 180 degrees in one tick. Fixed in dot-npc, whose suite asserts the round trip.
 - **`turn_view` could not turn round**: for a target directly behind it rotated about `from × UP`, a horizontal axis, and the bot tipped its head back; its own comment said that case had been fixed.
 - **`surround` aimed one tick of angle ahead**, inside the arrival distance, so a flanker never got round.
 - **The first surround heaped**, with every check passing; only the plotted trace showed it.

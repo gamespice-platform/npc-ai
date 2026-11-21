@@ -1,8 +1,8 @@
-class_name DotNpcAiNavHandLinks
+class_name GSNpcAiNavHandLinks
 extends RefCounted
 
 ## Links a person placed by hand (a ladder, a door, a jump, a drop), as data: the `nav_links` section of a map's data bundle.
-## [b]Kept apart from [DotNpcAiNavAnnotations] on purpose:[/b] the annotator's links are a cache that a re-bake replaces, these are authored and must survive it. [method apply_to] copies them into an annotations object (kind and ends as the annotator's own, so any pathing reads both the same way).
+## [b]Kept apart from [GSNpcAiNavAnnotations] on purpose:[/b] the annotator's links are a cache that a re-bake replaces, these are authored and must survive it. [method apply_to] copies them into an annotations object (kind and ends as the annotator's own, so any pathing reads both the same way).
 ## Ids are stable and never reused within one set, so a tool can name a link across edits.
 
 # No log channel: a container. The tool that edits it logs who changed what.
@@ -16,7 +16,7 @@ var links: Array[Dictionary] = []
 var _next_id: int = 1
 
 
-## Adds a link from [param from] to [param to] and returns its id, or 0 when it is refused: a kind below 0, or two ends within a centimetre of each other. [param kind] is a [constant DotNpcAiNavAnnotations.LINK_NAMES] key or a game's own (from [constant DotNpcAiNavAnnotations.LINK_GAME_FIRST]). [param two_way] adds the return link too (same cost; a drop is usually one way); the id returned is the forward link's.
+## Adds a link from [param from] to [param to] and returns its id, or 0 when it is refused: a kind below 0, or two ends within a centimetre of each other. [param kind] is a [constant GSNpcAiNavAnnotations.LINK_NAMES] key or a game's own (from [constant GSNpcAiNavAnnotations.LINK_GAME_FIRST]). [param two_way] adds the return link too (same cost; a drop is usually one way); the id returned is the forward link's.
 func add(from: Vector3, to: Vector3, kind: int, cost: float = -1.0, flags: int = 0, two_way: bool = false) -> int:
 	if kind < 0 or from.distance_to(to) < 0.01:
 		return 0
@@ -65,8 +65,8 @@ func clear() -> void:
 	links.clear()
 
 
-## Appends the links to [param into]'s [member DotNpcAiNavAnnotations.links] that are not already there (same ends and kind), and returns how many were added. Call it after every annotation run, since a run replaces the generated links.
-func apply_to(into: DotNpcAiNavAnnotations) -> int:
+## Appends the links to [param into]'s [member GSNpcAiNavAnnotations.links] that are not already there (same ends and kind), and returns how many were added. Call it after every annotation run, since a run replaces the generated links.
+func apply_to(into: GSNpcAiNavAnnotations) -> int:
 	var added := 0
 	for link in links:
 		var present := false
@@ -88,21 +88,21 @@ func to_dict() -> Dictionary:
 
 
 ## The set [method to_dict] wrote, or a failure for another [constant VERSION] or a malformed row (nothing is half-loaded).
-static func from_dict(d: Dictionary) -> DotResult:
+static func from_dict(d: Dictionary) -> GSResult:
 	if int(d.get("version", -1)) != VERSION:
-		return DotResult.fail(DotError.CODE_VERSION, "nav links of version %s, this reads %d" % [str(d.get("version", "none")), VERSION])
-	var out := DotNpcAiNavHandLinks.new()
+		return GSResult.fail(GSError.CODE_VERSION, "nav links of version %s, this reads %d" % [str(d.get("version", "none")), VERSION])
+	var out := GSNpcAiNavHandLinks.new()
 	var top := 0
 	for row: Variant in d.get("links", []):
 		if not (row is Array) or (row as Array).size() < 6 or int(row[0]) <= 0:
-			return DotResult.fail(DotError.CODE_PARSE, "a nav link row is malformed")
+			return GSResult.fail(GSError.CODE_PARSE, "a nav link row is malformed")
 		var id := int(row[0])
 		if out.get_link(id).size() > 0:
-			return DotResult.fail(DotError.CODE_PARSE, "nav link id %d appears twice" % id)
+			return GSResult.fail(GSError.CODE_PARSE, "nav link id %d appears twice" % id)
 		top = maxi(top, id)
 		out.links.append({"id": id, "from": _p(row[1]), "to": _p(row[2]), "kind": int(row[3]), "cost": float(row[4]), "flags": int(row[5])})
 	out._next_id = maxi(int(d.get("next_id", 1)), top + 1)
-	return DotResult.success(out)
+	return GSResult.success(out)
 
 
 static func _v(v: Vector3) -> Array:

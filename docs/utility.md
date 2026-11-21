@@ -1,14 +1,14 @@
 # Utility scoring and personalities
 
-An opt-in layer that scores candidate actions from response curves and picks one, beside the tree and machine rather than replacing them. Off by default: `DotNpcAiUtilityConfig.enabled` is false, and `DotNpcAiBrain.use_utility()` returns null and leaves the brain as it was.
+An opt-in layer that scores candidate actions from response curves and picks one, beside the tree and machine rather than replacing them. Off by default: `GSNpcAiUtilityConfig.enabled` is false, and `GSNpcAiBrain.use_utility()` returns null and leaves the brain as it was.
 
 ## Pieces
 
-- `DotNpcAiCurve`: linear, quadratic, logistic, inverse and step. The input is mapped from `lo..hi` to 0..1; `shift` moves the curve (a logistic's midpoint, a step's threshold).
-- `DotNpcAiUtility`: actions, each a list of considerations (an input key, a curve, a weight 0..1 that pulls a term toward 1). Terms multiply with the compensation factor, so an action with four considerations is not unfairly smaller than one with two. `inputs` is a callable read once per key per evaluation.
-- `DotNpcAiPersonality`: action multipliers, curve shifts per consideration key, and a seeded per-NPC wobble fixed for the seed. Built-ins: aggressive, cautious, flanker.
-- `DotNpcAiUtilityConfig`: a `DotConfig`, so layered from JSON, environment and command line. Custom personalities are a dictionary (`personalities`), and `assignment` is `none`, `random` (from `pool`, by seed) or `role` (by `role_map`).
-- `DotNpcAiUtilityGate`: a tree guard that succeeds while the brain's choice is its action.
+- `GSNpcAiCurve`: linear, quadratic, logistic, inverse and step. The input is mapped from `lo..hi` to 0..1; `shift` moves the curve (a logistic's midpoint, a step's threshold).
+- `GSNpcAiUtility`: actions, each a list of considerations (an input key, a curve, a weight 0..1 that pulls a term toward 1). Terms multiply with the compensation factor, so an action with four considerations is not unfairly smaller than one with two. `inputs` is a callable read once per key per evaluation.
+- `GSNpcAiPersonality`: action multipliers, curve shifts per consideration key, and a seeded per-NPC wobble fixed for the seed. Built-ins: aggressive, cautious, flanker.
+- `GSNpcAiUtilityConfig`: a `GSConfig`, so layered from JSON, environment and command line. Custom personalities are a dictionary (`personalities`), and `assignment` is `none`, `random` (from `pool`, by seed) or `role` (by `role_map`).
+- `GSNpcAiUtilityGate`: a tree guard that succeeds while the brain's choice is its action.
 
 ## Not flapping
 

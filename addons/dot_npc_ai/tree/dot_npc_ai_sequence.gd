@@ -1,5 +1,5 @@
-class_name DotNpcAiSequence
-extends DotNpcAiComposite
+class_name GSNpcAiSequence
+extends GSNpcAiComposite
 
 ## Runs its children in order until one fails. "Do this, then that." FAILURE on the first failure, RUNNING while one runs, SUCCESS only when all succeed.
 ## By default it resumes at the running child and does NOT re-run earlier ones ("open the door, walk through, close it" must not re-open the door sixty times a second). [b][member reactive][/b] is for GUARD-then-BEHAVIOUR: a plain sequence resumes at the action and never asks the guard again, so the NPC chases a target it no longer has.
@@ -11,11 +11,11 @@ extends DotNpcAiComposite
 var reactive: bool = false
 
 
-func _init(p_name: StringName = &"", p_children: Array[DotNpcAiNode] = []) -> void:
+func _init(p_name: StringName = &"", p_children: Array[GSNpcAiNode] = []) -> void:
 	super(p_name, p_children)
 
 
-func _tick(ctx: DotNpcAiContext) -> Status:
+func _tick(ctx: GSNpcAiContext) -> Status:
 	var resume := _resume_from()
 	var from := 0 if reactive else resume
 
@@ -40,8 +40,8 @@ func _tick(ctx: DotNpcAiContext) -> Status:
 
 ## A guard-then-behaviour sequence, which is what a tree is mostly made of.
 static func reactive_with(
-	p_name: StringName, p_children: Array[DotNpcAiNode]
-) -> DotNpcAiSequence:
+	p_name: StringName, p_children: Array[GSNpcAiNode]
+) -> GSNpcAiSequence:
 	# Not this class's own name. A script that names itself in an expression, loaded after
 	# its base, cuts Godot 4.7.2's exit teardown short and leaks every script loaded before
 	# it. See docs/gdscript-hazards.md, "A script that names itself".

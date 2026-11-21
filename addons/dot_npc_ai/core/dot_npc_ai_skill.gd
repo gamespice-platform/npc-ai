@@ -1,9 +1,9 @@
-class_name DotNpcAiSkill
+class_name GSNpcAiSkill
 extends RefCounted
 
-## How good a server's NPCs are, set by the operator, on top of who each one is. An adjustment, not a difficulty setting: it moves every character toward [method DotNpcAiCharacter.easy] or [method DotNpcAiCharacter.nightmare] by a fraction, because a global value that replaced the numbers would make every monster the same monster.
+## How good a server's NPCs are, set by the operator, on top of who each one is. An adjustment, not a difficulty setting: it moves every character toward [method GSNpcAiCharacter.easy] or [method GSNpcAiCharacter.nightmare] by a fraction, because a global value that replaced the numbers would make every monster the same monster.
 ## Ability (reaction, alertness, memory, aim, turning, tactics) moves; personality (aggression, self-preservation, movement tendencies) does not, and only in the direction asked: a plain lerp would make an already-better stalker worse.
-## Three cvars through [method bind_cvars]: `npc_skill` (-1..1 or a name), `npc_reaction_scale`, `npc_reaction_min`. One per server, shared by brains; [member revision] tells them it changed. [method attach] uses node metadata, not [DotRegistry], so two servers in one process do not share a difficulty.
+## Three cvars through [method bind_cvars]: `npc_skill` (-1..1 or a name), `npc_reaction_scale`, `npc_reaction_min`. One per server, shared by brains; [member revision] tells them it changed. [method attach] uses node metadata, not [GSRegistry], so two servers in one process do not share a difficulty.
 
 # No log channel: a few numbers and their parsing. The cvar that changed them logs.
 
@@ -52,16 +52,16 @@ var revision: int = 0
 
 ## [param base] as this server would have it, as a new character; [param base] is not touched.
 ## Seed, id and personality carry over, so the aim error is the same miss scaled, not a different one.
-func apply(base: DotNpcAiCharacter) -> DotNpcAiCharacter:
+func apply(base: GSNpcAiCharacter) -> GSNpcAiCharacter:
 	if base == null:
 		return null
 
-	var out: DotNpcAiCharacter = base.duplicate(true)
+	var out: GSNpcAiCharacter = base.duplicate(true)
 	var t := clampf(absf(skill), 0.0, 1.0)
 
 	if t > 0.0:
 		var improving := skill > 0.0
-		var toward := DotNpcAiCharacter.nightmare() if improving else DotNpcAiCharacter.easy()
+		var toward := GSNpcAiCharacter.nightmare() if improving else GSNpcAiCharacter.easy()
 
 		out.reaction_time = _shift(base.reaction_time, toward.reaction_time, t, improving, false)
 		out.alertness = _shift(base.alertness, toward.alertness, t, improving, true)
@@ -139,17 +139,17 @@ func _assign(p_skill: float, p_scale: float, p_min: float) -> void:
 
 ## Parses what an operator typed into the number [member skill] takes: a name from [constant LEVELS] or a number.
 ## Numbers outside -1..1 are clamped, like every numeric cvar in the family: `npc_skill 5` gives the maximum, not an error.
-static func parse_skill(text: String) -> DotResult:
+static func parse_skill(text: String) -> GSResult:
 	var trimmed := text.strip_edges().to_lower()
 
 	if LEVELS.has(trimmed):
-		return DotResult.success(float(LEVELS[trimmed]))
+		return GSResult.success(float(LEVELS[trimmed]))
 
 	if trimmed.is_valid_float():
-		return DotResult.success(clampf(trimmed.to_float(), -1.0, 1.0))
+		return GSResult.success(clampf(trimmed.to_float(), -1.0, 1.0))
 
-	return DotResult.fail(
-		DotError.CODE_INVALID,
+	return GSResult.fail(
+		GSError.CODE_INVALID,
 		"npc_skill takes easy, normal, hard, nightmare or a number from -1 to 1.",
 		text
 	)
@@ -236,7 +236,7 @@ func bind_cvars(add: Callable, flags: int = 0) -> Array:
 		if cvar_name == CVAR_SKILL and cv.has_method(&"with_validator"):
 			# Refused at the console rather than ignored here: an operator who typed
 			# `npc_skill hrad` should be told, not left with NPCs that quietly did not change.
-			cv.call(&"with_validator", func(text: String) -> DotResult: return parse_skill(text))
+			cv.call(&"with_validator", func(text: String) -> GSResult: return parse_skill(text))
 
 		if cv.has_signal(&"changed"):
 			cv.connect(&"changed", _on_cvar_changed.bind(cvar_name))
@@ -260,7 +260,7 @@ static func _number(value: float) -> String:
 
 
 
-## Puts this on [param director], where every [DotNpcAiBrain] it spawns finds it.
+## Puts this on [param director], where every [GSNpcAiBrain] it spawns finds it.
 ## Ideally before the first spawn; a brain that missed it looks again each tick, so a late attach costs a tick.
 func attach(director: Node) -> void:
 	if director != null:
@@ -268,11 +268,11 @@ func attach(director: Node) -> void:
 
 
 ## The skill attached to [param director], or null.
-static func of(director: Object) -> DotNpcAiSkill:
+static func of(director: Object) -> GSNpcAiSkill:
 	if director == null or not director.has_meta(META):
 		return null
 
-	return director.get_meta(META) as DotNpcAiSkill
+	return director.get_meta(META) as GSNpcAiSkill
 
 
 func describe() -> Dictionary:

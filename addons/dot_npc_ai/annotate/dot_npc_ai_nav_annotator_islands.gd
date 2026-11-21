@@ -1,11 +1,11 @@
 extends "dot_npc_ai_nav_annotator_state.gd"
 
 
-## The islands phase of [DotNpcAiNavAnnotator]: which islands of the mesh are kept. Not a public class.
+## The islands phase of [GSNpcAiNavAnnotator]: which islands of the mesh are kept. Not a public class.
 
 
 ## The mesh's polygons on islands a body can reach (see [member seeds]), once the job has run:
-## where a game should draw random points from, and what [DotNpcAiNavDebug] draws.
+## where a game should draw random points from, and what [GSNpcAiNavDebug] draws.
 func kept_polygons() -> PackedInt32Array:
 	var out := PackedInt32Array()
 	if _kept.is_empty():

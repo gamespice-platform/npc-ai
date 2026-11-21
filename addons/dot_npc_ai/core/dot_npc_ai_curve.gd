@@ -1,4 +1,4 @@
-class_name DotNpcAiCurve
+class_name GSNpcAiCurve
 extends RefCounted
 
 ## A response curve: maps a raw input to a 0..1 score for utility scoring. Pure and allocation-free.
@@ -17,8 +17,8 @@ var exponent: float = 2.0
 var shift: float = 0.0
 
 
-static func make(p_kind: Kind, p_lo: float = 0.0, p_hi: float = 1.0, p_slope: float = 1.0, p_shift: float = 0.0) -> DotNpcAiCurve:
-	var c := DotNpcAiCurve.new()
+static func make(p_kind: Kind, p_lo: float = 0.0, p_hi: float = 1.0, p_slope: float = 1.0, p_shift: float = 0.0) -> GSNpcAiCurve:
+	var c := GSNpcAiCurve.new()
 	c.kind = p_kind
 	c.lo = p_lo
 	c.hi = p_hi
@@ -57,13 +57,13 @@ func to_dictionary() -> Dictionary:
 
 
 ## A curve from a dictionary (from JSON or YAML); an unknown kind is an error, never a silent linear.
-static func from_dictionary(d: Dictionary) -> DotResult:
+static func from_dictionary(d: Dictionary) -> GSResult:
 	var name := String(d.get("kind", "linear")).to_upper()
 	if not Kind.has(name):
-		return DotResult.fail(DotError.CODE_INVALID, "unknown curve kind '%s'" % name.to_lower())
+		return GSResult.fail(GSError.CODE_INVALID, "unknown curve kind '%s'" % name.to_lower())
 	var c := make(Kind[name], float(d.get("lo", 0.0)), float(d.get("hi", 1.0)), float(d.get("slope", 1.0)), float(d.get("shift", 0.0)))
 	c.exponent = float(d.get("exponent", 2.0))
-	return DotResult.success(c)
+	return GSResult.success(c)
 
 
 func describe() -> String:

@@ -12,15 +12,15 @@ Copy `addons/dot_npc_ai/`, `addons/dot_npc/` and [GameSpice Core](https://github
 
 | Piece | What it does | More |
 | --- | --- | --- |
-| Behaviour tree (`DotNpcAiSelector`, `DotNpcAiSequence`, `DotNpcAiLeaf`, decorators, `DotNpcAiParallel`) | Picks what to do each tick and remembers what was running. | [docs/decisions.md](docs/decisions.md) |
-| State machine (`DotNpcAiMachine`, `DotNpcAiState`) | For NPCs that are simpler than a tree. | [docs/decisions.md](docs/decisions.md) |
-| Blackboard (`DotNpcAiBlackboard`) | Per-NPC memory whose entries expire. | [docs/decisions.md](docs/decisions.md) |
-| Utility scoring (`DotNpcAiUtility`, `DotNpcAiCurve`, `DotNpcAiPersonality`) | Scores actions with response curves and picks one without flip-flopping. | [docs/utility.md](docs/utility.md) |
-| Character and skill (`DotNpcAiCharacter`, `DotNpcAiSkill`) | Per-NPC reaction time, aim, memory, aggression. Server-wide difficulty. | [docs/character.md](docs/character.md) |
-| Tactics (`DotNpcAiSquads`, `DotNpcAiSounds`, `DotNpcAiMemory`, `DotNpcAiHeatmap`) | Squads, hearing, cover, shooting, learned player routes. | [docs/tactics.md](docs/tactics.md) |
-| Steering and avoidance (`DotNpcAiSteering`, `DotNpcAiAvoidance`, `DotNpcAiCrowdGrid`) | Spacing and local avoidance for crowds. Opt in. | [docs/avoidance.md](docs/avoidance.md) |
-| Scheduler (`DotNpcAiScheduler`) | Thinks less often for NPCs far from players. Opt in. | [docs/scheduler.md](docs/scheduler.md) |
-| Map annotation (`DotNpcAiNavAnnotator`) | Finds jump and drop links, cover, hiding spots and chokepoints from a baked navigation mesh. | [docs/navigation-annotations.md](docs/navigation-annotations.md) |
+| Behaviour tree (`GSNpcAiSelector`, `GSNpcAiSequence`, `GSNpcAiLeaf`, decorators, `GSNpcAiParallel`) | Picks what to do each tick and remembers what was running. | [docs/decisions.md](docs/decisions.md) |
+| State machine (`GSNpcAiMachine`, `GSNpcAiState`) | For NPCs that are simpler than a tree. | [docs/decisions.md](docs/decisions.md) |
+| Blackboard (`GSNpcAiBlackboard`) | Per-NPC memory whose entries expire. | [docs/decisions.md](docs/decisions.md) |
+| Utility scoring (`GSNpcAiUtility`, `GSNpcAiCurve`, `GSNpcAiPersonality`) | Scores actions with response curves and picks one without flip-flopping. | [docs/utility.md](docs/utility.md) |
+| Character and skill (`GSNpcAiCharacter`, `GSNpcAiSkill`) | Per-NPC reaction time, aim, memory, aggression. Server-wide difficulty. | [docs/character.md](docs/character.md) |
+| Tactics (`GSNpcAiSquads`, `GSNpcAiSounds`, `GSNpcAiMemory`, `GSNpcAiHeatmap`) | Squads, hearing, cover, shooting, learned player routes. | [docs/tactics.md](docs/tactics.md) |
+| Steering and avoidance (`GSNpcAiSteering`, `GSNpcAiAvoidance`, `GSNpcAiCrowdGrid`) | Spacing and local avoidance for crowds. Opt in. | [docs/avoidance.md](docs/avoidance.md) |
+| Scheduler (`GSNpcAiScheduler`) | Thinks less often for NPCs far from players. Opt in. | [docs/scheduler.md](docs/scheduler.md) |
+| Map annotation (`GSNpcAiNavAnnotator`) | Finds jump and drop links, cover, hiding spots and chokepoints from a baked navigation mesh. | [docs/navigation-annotations.md](docs/navigation-annotations.md) |
 
 ## Quick start
 
@@ -30,44 +30,44 @@ extends "res://addons/dot_npc_ai/runtime/dot_npc_ai_brain.gd"
 func _build() -> void:
     initial_state = &"idle"
 
-    machine = DotNpcAiMachine.new()
-    machine.add(DotNpcAiState.make(&"idle")
+    machine = GSNpcAiMachine.new()
+    machine.add(GSNpcAiState.make(&"idle")
         .when(func(_c): return npc.has_target(), &"chasing"))
-    machine.add(DotNpcAiState.make(&"chasing")
+    machine.add(GSNpcAiState.make(&"chasing")
         .when(func(_c): return not npc.has_target(), &"searching"))
-    machine.add(DotNpcAiState.make(&"searching")
+    machine.add(GSNpcAiState.make(&"searching")
         .when(func(_c): return npc.has_target(), &"chasing")
         .after(3.0, &"idle"))
 
-    tree = DotNpcAiSelector.new(&"root", [
-        DotNpcAiSequence.reactive_with(&"chase", [
-            DotNpcAiLeaf.Condition.new(&"has a target", func(_c): return npc.has_target()),
-            DotNpcAiLeaf.Action.new(&"walk at it", _chase),
+    tree = GSNpcAiSelector.new(&"root", [
+        GSNpcAiSequence.reactive_with(&"chase", [
+            GSNpcAiLeaf.Condition.new(&"has a target", func(_c): return npc.has_target()),
+            GSNpcAiLeaf.Action.new(&"walk at it", _chase),
         ]),
-        DotNpcAiLeaf.Action.new(&"wander", _wander),
+        GSNpcAiLeaf.Action.new(&"wander", _wander),
     ])
 
-func _chase(ctx: DotNpcAiContext) -> int:
+func _chase(ctx: GSNpcAiContext) -> int:
     ctx.put(&"last_seen", target_position(), 6.0)      # remembered for six seconds
     steer_with_spacing(target_position(), 4.0, ctx.delta)
-    return DotNpcAiNode.Status.RUNNING
+    return GSNpcAiNode.Status.RUNNING
 ```
 
 ## Two rules to know
 
 1. **A node that returned RUNNING is resumed next tick, not restarted.** The composites keep the resume position and `tick()` cannot be overridden, so you cannot get this wrong by accident.
-2. **A check followed by an action that never finishes needs a reactive sequence.** Use `DotNpcAiSequence.reactive_with()` so the check is asked again every tick. A plain sequence is for steps done in order.
+2. **A check followed by an action that never finishes needs a reactive sequence.** Use `GSNpcAiSequence.reactive_with()` so the check is asked again every tick. A plain sequence is for steps done in order.
 
 ## Characters and difficulty
 
-A tree decides what an NPC does. A `DotNpcAiCharacter` decides how well. It sets reaction time, alertness, memory, aim accuracy and skill, turn rate, aggression, self-preservation, vengefulness, camping and tactics. Presets: `easy()`, `normal()`, `hard()`, `nightmare()`.
+A tree decides what an NPC does. A `GSNpcAiCharacter` decides how well. It sets reaction time, alertness, memory, aim accuracy and skill, turn rate, aggression, self-preservation, vengefulness, camping and tactics. Presets: `easy()`, `normal()`, `hard()`, `nightmare()`.
 
 ```gdscript
-brain.character = DotNpcAiCharacter.hard().with_seed(npc.instance_id)
+brain.character = GSNpcAiCharacter.hard().with_seed(npc.instance_id)
 
 # In the "shoot at it" branch:
 if not ctx.has_reacted(npc.target_since):   # use target_since, not engaged_at
-    return DotNpcAiNode.Status.RUNNING       # seen it, not acted on it yet
+    return GSNpcAiNode.Status.RUNNING       # seen it, not acted on it yet
 var at := ctx.character.aim_point(muzzle, target.position, target.velocity, 900.0, shot)
 ```
 
@@ -75,7 +75,7 @@ A catalogue can name a preset in a definition's `meta`, for example `"skill": "h
 
 ### Server difficulty
 
-`DotNpcAiSkill` lets a server operator make every NPC smarter or slower without editing catalogues. It moves each character toward the easy or nightmare preset instead of replacing it, and live NPCs pick the change up on their next tick. Personality is never changed.
+`GSNpcAiSkill` lets a server operator make every NPC smarter or slower without editing catalogues. It moves each character toward the easy or nightmare preset instead of replacing it, and live NPCs pick the change up on their next tick. Personality is never changed.
 
 | Cvar | Default | What it does |
 | --- | --- | --- |
@@ -84,7 +84,7 @@ A catalogue can name a preset in a definition's `meta`, for example `"skill": "h
 | `npc_reaction_min` | `0.05` | Lowest reaction time in seconds. 0 allows instant reactions. NPCs authored with no reaction time are left alone. |
 
 ```gdscript
-game.npc_skill.bind_cvars(add_cvar, DotConVar.FLAG_NOTIFY)   # in a dot-server module, once
+game.npc_skill.bind_cvars(add_cvar, GSConVar.FLAG_NOTIFY)   # in a dot-server module, once
 game.npc_skill.attach(spawner)                               # before the first spawn
 ```
 
@@ -92,7 +92,7 @@ GameSpice Server is not required: `bind_cvars` accepts any function shaped like 
 
 ## Tactics
 
-Attach a `DotNpcAiSquads` and a `DotNpcAiSounds` to the spawner and name a squad in a definition's `meta`. Every `DotNpcAiBrain` then, with no game code:
+Attach a `GSNpcAiSquads` and a `GSNpcAiSounds` to the spawner and name a squad in a definition's `meta`. Every `GSNpcAiBrain` then, with no game code:
 
 - turns what it senses into conditions (`SEE_ENEMY`, `NEW_ENEMY`, `LOST_ENEMY`, `LOW_HEALTH`, `HEAR_COMBAT`, `HAS_ATTACK_SLOT` and others) that guards and interrupts can read;
 - remembers several enemies: where, how it knows, how fast they moved, who hurt it;
@@ -100,7 +100,7 @@ Attach a `DotNpcAiSquads` and a `DotNpcAiSounds` to the spawner and name a squad
 - calls out what it sees so squadmates come to help;
 - turns no faster than its character allows.
 
-Ready-made leaves for your tree: `flee_danger`, `surround`, `search`, `find_cover` and `take_cover`, `ready_to_fire`, `aim_solution`, `hold_range`, `claim_role` and `patrol_hot`. Only a squad's attackers go at the target; the others ring it. `DotNpcAiHeatmap` learns where players go and `DotNpcAiHeatKeeper` saves one per map. Details and a full tree example are in [docs/tactics.md](docs/tactics.md).
+Ready-made leaves for your tree: `flee_danger`, `surround`, `search`, `find_cover` and `take_cover`, `ready_to_fire`, `aim_solution`, `hold_range`, `claim_role` and `patrol_hot`. Only a squad's attackers go at the target; the others ring it. `GSNpcAiHeatmap` learns where players go and `GSNpcAiHeatKeeper` saves one per map. Details and a full tree example are in [docs/tactics.md](docs/tactics.md).
 
 ## Try it
 

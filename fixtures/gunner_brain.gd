@@ -7,27 +7,27 @@ var shots: int = 0
 
 
 func _build() -> void:
-	tree = DotNpcAiSelector.new(&"root", [
-		DotNpcAiLeaf.Action.new(&"flee", func(c: DotNpcAiContext) -> int: return flee_danger(c, 5.0)),
-		DotNpcAiSequence.reactive_with(&"fight", [
-			DotNpcAiLeaf.Condition.new(&"has a target", func(_c: DotNpcAiContext) -> bool: return npc.has_target()),
-			DotNpcAiSelector.new(&"engage", [
-				DotNpcAiSequence.reactive_with(&"flank", [
-					DotNpcAiLeaf.Condition.new(&"flank role", func(_c: DotNpcAiContext) -> bool:
+	tree = GSNpcAiSelector.new(&"root", [
+		GSNpcAiLeaf.Action.new(&"flee", func(c: GSNpcAiContext) -> int: return flee_danger(c, 5.0)),
+		GSNpcAiSequence.reactive_with(&"fight", [
+			GSNpcAiLeaf.Condition.new(&"has a target", func(_c: GSNpcAiContext) -> bool: return npc.has_target()),
+			GSNpcAiSelector.new(&"engage", [
+				GSNpcAiSequence.reactive_with(&"flank", [
+					GSNpcAiLeaf.Condition.new(&"flank role", func(_c: GSNpcAiContext) -> bool:
 						return tactics() >= 0.5 and claim_role(ROLE_FLANK, 1)),
-					DotNpcAiLeaf.Action.new(&"go round", _flank),
-				] as Array[DotNpcAiNode]),
-				DotNpcAiLeaf.Action.new(&"suppress", _engage),
-			] as Array[DotNpcAiNode]),
-		] as Array[DotNpcAiNode]),
-		DotNpcAiLeaf.Action.new(&"search", func(c: DotNpcAiContext) -> int: return search(c, 4.0)),
-		DotNpcAiLeaf.Action.new(&"idle", func(_c: DotNpcAiContext) -> int:
+					GSNpcAiLeaf.Action.new(&"go round", _flank),
+				] as Array[GSNpcAiNode]),
+				GSNpcAiLeaf.Action.new(&"suppress", _engage),
+			] as Array[GSNpcAiNode]),
+		] as Array[GSNpcAiNode]),
+		GSNpcAiLeaf.Action.new(&"search", func(c: GSNpcAiContext) -> int: return search(c, 4.0)),
+		GSNpcAiLeaf.Action.new(&"idle", func(_c: GSNpcAiContext) -> int:
 			halt()
-			return DotNpcAiNode.Status.RUNNING),
-	] as Array[DotNpcAiNode])
+			return GSNpcAiNode.Status.RUNNING),
+	] as Array[GSNpcAiNode])
 
 
-func _engage(ctx: DotNpcAiContext) -> int:
+func _engage(ctx: GSNpcAiContext) -> int:
 	var status := hold_range(ctx, tune(&"speed", 4.0), tune(&"near", 8.0), tune(&"far", 14.0))
 	var muzzle := npc.position() + Vector3(0, 1.4, 0)
 
@@ -41,16 +41,16 @@ func _engage(ctx: DotNpcAiContext) -> int:
 var flanks: int = 0
 
 
-func _flank(ctx: DotNpcAiContext) -> int:
+func _flank(ctx: GSNpcAiContext) -> int:
 	flanks += 1
 	var center := target_position(Vector3.INF)
 
 	if center == Vector3.INF:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var here := npc.position()
 	var radius := (tune(&"near", 8.0) + tune(&"far", 14.0)) * 0.5
-	var point := DotNpcAiTactics.ring_point(center, here, radius, _enemy_facing(center), flank_lead)
+	var point := GSNpcAiTactics.ring_point(center, here, radius, _enemy_facing(center), flank_lead)
 	var flat := point - here
 	flat.y = 0.0
 
@@ -66,4 +66,4 @@ func _flank(ctx: DotNpcAiContext) -> int:
 		var _aim := aim_solution(muzzle)
 		shots += 1
 
-	return DotNpcAiNode.Status.RUNNING
+	return GSNpcAiNode.Status.RUNNING

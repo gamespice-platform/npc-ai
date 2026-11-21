@@ -1,8 +1,8 @@
-class_name DotNpcAiConditions
+class_name GSNpcAiConditions
 extends RefCounted
 
 ## What an NPC has noticed THIS tick, as bits: the interrupts a running behaviour checks. A tree only asks the world when it reaches a node, so it misses what happened mid-action; long actions name the conditions that end them (a reload cut off by heavy damage).
-## [b]Sensed once, read many times:[/b] [DotNpcAiBrain] fills this before the tree and machine run, so every guard and [DotNpcAiDecorator.Interrupt] sees the same facts.
+## [b]Sensed once, read many times:[/b] [GSNpcAiBrain] fills this before the tree and machine run, so every guard and [GSNpcAiDecorator.Interrupt] sees the same facts.
 ## [b]Bits, not a dictionary,[/b] because "any of these" is one AND. Games define their own from [constant GAME_FIRST] up.
 
 # No log channel: a bitset, set and read every think by every NPC.
@@ -17,10 +17,10 @@ const ENEMY_OCCLUDED := 1 << 2
 const LOST_ENEMY := 1 << 3
 ## Hurt since the last think.
 const LIGHT_DAMAGE := 1 << 4
-## Hurt by more than [member DotNpcAiBrain.heavy_damage_fraction] of its health inside the
+## Hurt by more than [member GSNpcAiBrain.heavy_damage_fraction] of its health inside the
 ## damage window. The "break off" signal.
 const HEAVY_DAMAGE := 1 << 5
-## Below [member DotNpcAiBrain.low_health_fraction].
+## Below [member GSNpcAiBrain.low_health_fraction].
 const LOW_HEALTH := 1 << 6
 ## Heard fighting: gunfire, a blow, an explosion.
 const HEAR_COMBAT := 1 << 7
@@ -97,4 +97,4 @@ func names() -> PackedStringArray:
 
 
 func _to_string() -> String:
-	return "DotNpcAiConditions(%s)" % ", ".join(names())
+	return "GSNpcAiConditions(%s)" % ", ".join(names())

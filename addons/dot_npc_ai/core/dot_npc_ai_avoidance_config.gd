@@ -1,7 +1,7 @@
-class_name DotNpcAiAvoidanceConfig
-extends DotConfig
+class_name GSNpcAiAvoidanceConfig
+extends GSConfig
 
-## Every number of [DotNpcAiAvoidance]. Layered like any DotConfig: defaults, JSON, environment, command line.
+## Every number of [GSNpcAiAvoidance]. Layered like any GSConfig: defaults, JSON, environment, command line.
 
 ## Off by default: with it off, or no avoidance node registered, an NPC steers exactly as before.
 @export var enabled: bool = false

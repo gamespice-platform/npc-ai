@@ -1,5 +1,5 @@
-class_name DotNpcAiUtilityGate
-extends DotNpcAiNode
+class_name GSNpcAiUtilityGate
+extends GSNpcAiNode
 
 ## SUCCESS while the brain's utility choice is [member action]: a guard to put in front of a branch.
 
@@ -11,7 +11,7 @@ func _init(p_action: StringName = &"") -> void:
 	action = p_action
 
 
-func _tick(ctx: DotNpcAiContext) -> Status:
+func _tick(ctx: GSNpcAiContext) -> Status:
 	var brain := ctx.brain
 	if brain == null or not brain.has_method(&"utility_choose"):
 		return Status.FAILURE

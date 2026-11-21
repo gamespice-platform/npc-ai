@@ -1,8 +1,8 @@
-class_name DotNpcAiSteerBrain
+class_name GSNpcAiSteerBrain
 extends "dot_npc_ai_brain.gd"
 
-## A [DotNpcAiBrain] for a crowd that needs steering and no tree: seeks its target (wanders without one) and keeps its spacing.
-## Thinks as gather, decide, apply: only the decide step is pure, so it is the one brain here that may run on [member DotNpcSpawner.think_workers].
+## A [GSNpcAiBrain] for a crowd that needs steering and no tree: seeks its target (wanders without one) and keeps its spacing.
+## Thinks as gather, decide, apply: only the decide step is pure, so it is the one brain here that may run on [member GSNpcSpawner.think_workers].
 ## Extended by path, like every brain. Set `speed`, `spacing` and `wander_jitter` in the definition's meta.
 
 var _ticks: int = 0
@@ -44,11 +44,11 @@ func _npc_decide(data: Variant) -> Variant:
 	var angle: float = data["angle"]
 	var wanted := Vector3.ZERO
 	if goal != Vector3.INF:
-		wanted = DotNpcAiSteering.seek(here, goal)
+		wanted = GSNpcAiSteering.seek(here, goal)
 	else:
-		angle = DotNpcAiSteering.wander(angle, data["jitter"], data["seed"])
-		wanted = DotNpcAiSteering.angle_to_direction(angle)
-	var apart := DotNpcAiSteering.separate(here, data["near"], data["spacing"], data["right"])
+		angle = GSNpcAiSteering.wander(angle, data["jitter"], data["seed"])
+		wanted = GSNpcAiSteering.angle_to_direction(angle)
+	var apart := GSNpcAiSteering.separate(here, data["near"], data["spacing"], data["right"])
 	var dir := wanted + apart * 0.6
 	dir.y = 0.0
 	dir = dir.normalized() if dir.length() > 0.001 else Vector3.ZERO

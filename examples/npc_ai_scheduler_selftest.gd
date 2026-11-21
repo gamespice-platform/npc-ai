@@ -1,6 +1,6 @@
 extends Node
 
-## DotNpcAiScheduler against fake brains: tiers, stagger, the budget, the caches, and what it saves.
+## GSNpcAiScheduler against fake brains: tiers, stagger, the budget, the caches, and what it saves.
 
 const CHECKS := 67
 const SECTIONS := 9
@@ -38,7 +38,7 @@ class FakeBrain extends RefCounted:
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -90,9 +90,9 @@ func _check(ok: bool, what: String, detail: String = "") -> void:
 
 
 ## A scheduler on, with the players where [param players] says, a fake clock and a 2 ms budget.
-func _scheduler(enabled: bool = true, players: Array = [Vector3.ZERO], budget_ms: float = 2.0) -> DotNpcAiScheduler:
-	var s := DotNpcAiScheduler.new()
-	var c := DotNpcAiSchedulerConfig.new()
+func _scheduler(enabled: bool = true, players: Array = [Vector3.ZERO], budget_ms: float = 2.0) -> GSNpcAiScheduler:
+	var s := GSNpcAiScheduler.new()
+	var c := GSNpcAiSchedulerConfig.new()
 	c.enabled = enabled
 	c.budget_ms = budget_ms
 	s.apply_config(c)
@@ -103,7 +103,7 @@ func _scheduler(enabled: bool = true, players: Array = [Vector3.ZERO], budget_ms
 	return s
 
 
-func _brain(s: DotNpcAiScheduler, at: Vector3, seed_value: int = 0) -> FakeBrain:
+func _brain(s: GSNpcAiScheduler, at: Vector3, seed_value: int = 0) -> FakeBrain:
 	var b := FakeBrain.new()
 	b.npc.pos = at
 	b.npc.seed = seed_value
@@ -112,7 +112,7 @@ func _brain(s: DotNpcAiScheduler, at: Vector3, seed_value: int = 0) -> FakeBrain
 
 
 ## One frame the way a host runs it. [param cost_us] is what each think costs on the fake clock.
-func _frame(s: DotNpcAiScheduler, brains: Array, cost_us: int = 0) -> void:
+func _frame(s: GSNpcAiScheduler, brains: Array, cost_us: int = 0) -> void:
 	s.advance(1.0 / 60.0)
 	for b: FakeBrain in brains:
 		var d := s.admit(b, 1.0 / 60.0)
@@ -128,7 +128,7 @@ func _frame(s: DotNpcAiScheduler, brains: Array, cost_us: int = 0) -> void:
 
 func _test_off_by_default() -> void:
 	_section("off by default")
-	_check(DotNpcAiSchedulerConfig.new().enabled == false, "the config ships disabled")
+	_check(GSNpcAiSchedulerConfig.new().enabled == false, "the config ships disabled")
 	var s := _scheduler(false)
 	var far := _brain(s, Vector3(500, 0, 0), 7)
 	var frames := 0
@@ -137,7 +137,7 @@ func _test_off_by_default() -> void:
 		frames += 1
 	_check(far.thinks == 30, "a disabled scheduler lets a brain 500 m away think every tick", str(far.thinks))
 	_check(is_equal_approx(s.admit(far, 0.25), 0.25), "and hands back the brain's own delta")
-	_check(DotNpcAiScheduler.find() == null, "nothing is registered until the host does it")
+	_check(GSNpcAiScheduler.find() == null, "nothing is registered until the host does it")
 	_done()
 
 
@@ -340,14 +340,14 @@ func _test_queries() -> void:
 
 func _test_config() -> void:
 	_section("config")
-	var c := DotNpcAiSchedulerConfig.new()
+	var c := GSNpcAiSchedulerConfig.new()
 	var res := c.apply_dictionary({"budget_ms": 1.5, "tier1_interval": 5, "enabled": true})
 	_check(c.budget_ms == 1.5 and c.tier1_interval == 5 and c.enabled, "a dictionary (a yml or json file) sets the numbers")
 	c.full_range = 100.0
 	_check(not c.validate().ok, "ranges that do not rise are refused")
 	_check(c.config_keys().size() >= 17, "every number is a config key", str(c.config_keys().size()))
 	var s := _scheduler()
-	var cfg := DotNpcAiSchedulerConfig.new()
+	var cfg := GSNpcAiSchedulerConfig.new()
 	cfg.enabled = true
 	cfg.tier1_interval = 2
 	cfg.mid_range = 60.0
@@ -357,8 +357,8 @@ func _test_config() -> void:
 		_frame(s, [b])
 	_check(b.thinks == 10, "a changed interval changes the rate", str(b.thinks))
 	s.register_service()
-	_check(DotNpcAiScheduler.find() == s, "register_service puts it where brains look")
-	DotRegistry.unregister(DotNpcAiScheduler.SERVICE)
+	_check(GSNpcAiScheduler.find() == s, "register_service puts it where brains look")
+	GSRegistry.unregister(GSNpcAiScheduler.SERVICE)
 	_check(res != null, "apply_dictionary reports what it did")
 	_done()
 

@@ -1,8 +1,8 @@
-class_name DotNpcAiTactics
+class_name GSNpcAiTactics
 extends RefCounted
 
-## Where to stand: around an enemy, behind it, and the best of a set of places. Like [DotNpcAiSteering], every function answers with a position or score and moves nothing.
-## Surrounding: NPCs without an attack slot ([DotNpcAiSquad]) take a spread ring, working round to the side the enemy is not facing, so a player facing one has turned their back on another.
+## Where to stand: around an enemy, behind it, and the best of a set of places. Like [GSNpcAiSteering], every function answers with a position or score and moves nothing.
+## Surrounding: NPCs without an attack slot ([GSNpcAiSquad]) take a spread ring, working round to the side the enemy is not facing, so a player facing one has turned their back on another.
 
 # No log channel: pure functions.
 
@@ -124,7 +124,7 @@ static func best_of(candidates: PackedVector3Array, scorer: Callable) -> int:
 ## The best place on a ring round [param center] for [param from] to flank from, or INF when there is none.
 ## Scored through [method best_of]: higher behind [param enemy_facing] ([method angle_from_behind]), lower for each of [param allies] within the ally radius and for the walk there; weights are the token config's.
 static func best_flank(
-	center: Vector3, enemy_facing: Vector3, from: Vector3, radius: float, allies: Array, cfg: DotNpcAiTokenConfig
+	center: Vector3, enemy_facing: Vector3, from: Vector3, radius: float, allies: Array, cfg: GSNpcAiTokenConfig
 ) -> Vector3:
 	var ring := PackedVector3Array()
 	var count := maxi(cfg.flank_candidates, 3)

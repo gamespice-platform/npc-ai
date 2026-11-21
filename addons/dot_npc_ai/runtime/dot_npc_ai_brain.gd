@@ -1,8 +1,8 @@
-class_name DotNpcAiBrain
+class_name GSNpcAiBrain
 extends "dot_npc_ai_brain_senses.gd"
 
-## A [DotNpcBrain] that runs a behaviour tree or a state machine. The adapter: the ONLY file in GameSpice NPC AI that names anything from GameSpice NPC, so the tree, machine, blackboard and steering stay liftable into a vehicle, a 2D game or a menu.
-## A game subclasses it and builds its decision in [method _build] (once, at spawn), e.g. `tree = DotNpcAiSelector.new(&"root", [DotNpcAiSequence.new(&"chase", [...]), DotNpcAiLeaf.Action.new(&"wander", _wander)])`.
+## A [GSNpcBrain] that runs a behaviour tree or a state machine. The adapter: the ONLY file in GameSpice NPC AI that names anything from GameSpice NPC, so the tree, machine, blackboard and steering stay liftable into a vehicle, a 2D game or a menu.
+## A game subclasses it and builds its decision in [method _build] (once, at spawn), e.g. `tree = GSNpcAiSelector.new(&"root", [GSNpcAiSequence.new(&"chase", [...]), GSNpcAiLeaf.Action.new(&"wander", _wander)])`.
 ## Extended by PATH, like every brain: a script in a mounted GameSpice Cloud pack cannot resolve a `class_name`, which is why `brain_script_path` is a path.
 
 const _Leaves := preload("dot_npc_ai_brain_leaves.gd")
@@ -10,11 +10,11 @@ const _Leaves := preload("dot_npc_ai_brain_leaves.gd")
 
 func _npc_ready() -> void:
 	scheduler = _find_scheduler()
-	blackboard = DotNpcAiBlackboard.new()
-	context = DotNpcAiContext.make(npc, self, blackboard)
-	memory = DotNpcAiMemory.new()
-	sounds = DotNpcAiSounds.of(director)
-	heatmap = DotNpcAiHeatmap.of(director)
+	blackboard = GSNpcAiBlackboard.new()
+	context = GSNpcAiContext.make(npc, self, blackboard)
+	memory = GSNpcAiMemory.new()
+	sounds = GSNpcAiSounds.of(director)
+	heatmap = GSNpcAiHeatmap.of(director)
 	attack_capacity = int(tune(&"attackers", float(attack_capacity)))
 
 		# The definition's squad only when it names one: a game that chose the squad before binding (each
@@ -36,9 +36,9 @@ func _npc_ready() -> void:
 		var named := tune_string(&"skill", "")
 
 		if named != "":
-			character = DotNpcAiCharacter.preset(named)
+			character = GSNpcAiCharacter.preset(named)
 
-	skill = skill if skill != null else DotNpcAiSkill.of(director)
+	skill = skill if skill != null else GSNpcAiSkill.of(director)
 	_refresh_character()
 
 	_build()
@@ -49,7 +49,7 @@ func _npc_ready() -> void:
 
 	# After `_build`, so a game may choose the squad there.
 	if squad_name != &"":
-		var squads := DotNpcAiSquads.of(director)
+		var squads := GSNpcAiSquads.of(director)
 
 		if squads != null:
 			squad = squads.squad(squad_name)
@@ -60,7 +60,7 @@ func _npc_ready() -> void:
 		var started := machine.go_to(context, initial_state)
 
 		if not started.ok:
-			DotLog.warn("npc.ai", "an NPC's initial state does not exist", {
+			GSLog.warn("npc.ai", "an NPC's initial state does not exist", {
 				"state": String(initial_state),
 				"why": started.error.message,
 			})
@@ -70,11 +70,11 @@ func _npc_ready() -> void:
 
 
 ## Turns utility scoring on with [param config] (ignored unless it is enabled) and gives this NPC its personality for [param role]. Returns the scorer to add actions to.
-func use_utility(config: DotNpcAiUtilityConfig, role: StringName = &"") -> DotNpcAiUtility:
+func use_utility(config: GSNpcAiUtilityConfig, role: StringName = &"") -> GSNpcAiUtility:
 	if config == null or not config.enabled:
 		utility = null
 		return null
-	utility = DotNpcAiUtility.new()
+	utility = GSNpcAiUtility.new()
 	utility.config = config
 	utility.npc_seed = npc.seed if npc != null else 0
 	utility.personality = config.personality_for(utility.npc_seed, role)
@@ -157,7 +157,7 @@ func _npc_died(_by: StringName) -> void:
 
 
 ## The context points back at this brain and at the NPC, and this brain holds the
-## context: a cycle [method DotNpcBrain.unbind] exists to break. The tree and the
+## context: a cycle [method GSNpcBrain.unbind] exists to break. The tree and the
 ## machine go too, because a node that cached the context would be a second one.
 func _npc_unbound() -> void:
 	if scheduler != null and is_instance_valid(scheduler):
@@ -202,7 +202,7 @@ func has_reacted() -> bool:
 ## Each costs one comparison a tick when nothing did.
 func _refresh_character() -> void:
 	if skill == null and director != null:
-		skill = DotNpcAiSkill.of(director)
+		skill = GSNpcAiSkill.of(director)
 
 	if character != _applied:
 		# The game assigned one, at ready or since. It is the new authored character.
@@ -229,11 +229,11 @@ func _refresh_character() -> void:
 
 ## [param from] with this NPC's own seed, unless the game already gave it one.
 ## A character still carrying the preset's seed is one of twenty identical shooters, and the symptom is a volley rather than a fight.
-func _seeded(from: DotNpcAiCharacter) -> DotNpcAiCharacter:
+func _seeded(from: GSNpcAiCharacter) -> GSNpcAiCharacter:
 	if from == null:
 		return null
 
-	# [member DotNpcInstance.seed], never `instance_id`: the object id moves when anything
+	# [member GSNpcInstance.seed], never `instance_id`: the object id moves when anything
 	# else in the process is created first, and every choice drawn from it moved with it.
 	if from.seed_value <= 1 and npc != null and npc.seed != 0:
 		return from.with_seed(npc.seed)
@@ -244,16 +244,16 @@ func _seeded(from: DotNpcAiCharacter) -> DotNpcAiCharacter:
 ## Holds a place on a ring round the target, sharing the ring out with the rest of the
 ## squad that is waiting. The leaf for a squad member that has not got an attack slot.
 func surround(
-	ctx: DotNpcAiContext, speed: float, radius: float = 4.0, spacing: float = 1.6
-) -> DotNpcAiNode.Status:
+	ctx: GSNpcAiContext, speed: float, radius: float = 4.0, spacing: float = 1.6
+) -> GSNpcAiNode.Status:
 	return _Leaves.surround(self, ctx, speed, radius, spacing)
 
 
 ## What a member without an attack token does: take the best flanking place on a ring round the target and hold it
 ## at spacing. With tokens off it is [method surround]. RUNNING while there is a target; FAILURE without one.
 func hold_off(
-	ctx: DotNpcAiContext, speed: float, radius: float = 4.0, spacing: float = 1.6
-) -> DotNpcAiNode.Status:
+	ctx: GSNpcAiContext, speed: float, radius: float = 4.0, spacing: float = 1.6
+) -> GSNpcAiNode.Status:
 	return _Leaves.hold_off(self, ctx, speed, radius, spacing)
 
 
@@ -287,18 +287,18 @@ func fire_lane_clear(from: Vector3, to: Vector3, clearance: float = 0.8) -> bool
 ## Keeps between [param near] and [param far] metres from the target, strafing across it, facing it.
 ## RUNNING while there is a target, FAILURE without one.
 func hold_range(
-	ctx: DotNpcAiContext, speed: float, near: float = 8.0, far: float = 16.0, spacing: float = 1.6
-) -> DotNpcAiNode.Status:
+	ctx: GSNpcAiContext, speed: float, near: float = 8.0, far: float = 16.0, spacing: float = 1.6
+) -> GSNpcAiNode.Status:
 	return _Leaves.hold_range(self, ctx, speed, near, far, spacing)
 
 
 ## Patrols the hottest cells near it and waits at each facing the traffic. FAILURE with no heat map, nothing hot, or too little tactics.
-func patrol_hot(ctx: DotNpcAiContext, speed: float, radius: float = 40.0) -> DotNpcAiNode.Status:
+func patrol_hot(ctx: GSNpcAiContext, speed: float, radius: float = 40.0) -> GSNpcAiNode.Status:
 	return _Leaves.patrol_hot(self, ctx, speed, radius)
 
 
 ## Gets out of a danger's reach and waits there until it is over. A ready-made leaf.
-func flee_danger(ctx: DotNpcAiContext, speed: float) -> DotNpcAiNode.Status:
+func flee_danger(ctx: GSNpcAiContext, speed: float) -> GSNpcAiNode.Status:
 	return _Leaves.flee_danger(self, ctx, speed)
 
 
@@ -310,7 +310,7 @@ func _hurt_by(by: StringName, amount: float) -> void:
 func describe() -> Dictionary:
 	var out := super.describe()
 
-	out["tree"] = DotNpcAiNode.Status.keys()[last_status] if tree != null else "-"
+	out["tree"] = GSNpcAiNode.Status.keys()[last_status] if tree != null else "-"
 	out["machine"] = machine.describe() if machine != null else "-"
 	out["knows"] = blackboard.size() if blackboard != null else 0
 	out["character"] = String(character.id) if character != null else "-"

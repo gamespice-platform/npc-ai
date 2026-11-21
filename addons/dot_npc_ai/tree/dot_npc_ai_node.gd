@@ -1,4 +1,4 @@
-class_name DotNpcAiNode
+class_name GSNpcAiNode
 extends RefCounted
 
 ## One node of a behaviour tree. The base every composite, decorator and leaf extends.
@@ -31,7 +31,7 @@ func _init(p_name: StringName = &"") -> void:
 
 
 ## Runs this node for one tick. Not overridden — override [method _tick].
-func tick(ctx: DotNpcAiContext) -> Status:
+func tick(ctx: GSNpcAiContext) -> Status:
 	if not is_running:
 		_enter(ctx)
 
@@ -48,7 +48,7 @@ func tick(ctx: DotNpcAiContext) -> Status:
 
 ## Abandons this node mid-action. Safe to call on a node that is not running.
 ## Composites must call this on their running child before returning something else, or whatever it reserved is never released; a game writing its own composite must too.
-func abort(ctx: DotNpcAiContext) -> void:
+func abort(ctx: GSNpcAiContext) -> void:
 	if not is_running:
 		return
 
@@ -75,28 +75,28 @@ static func deterministic_unit(a: int, b: int) -> float:
 
 
 ## Every child of this node. Empty for a leaf.
-func children() -> Array[DotNpcAiNode]:
+func children() -> Array[GSNpcAiNode]:
 	return []
 
 
 
 ## Called on the tick this node starts, before [method _tick].
-func _enter(_ctx: DotNpcAiContext) -> void:
+func _enter(_ctx: GSNpcAiContext) -> void:
 	pass
 
 
 ## The behaviour. Must return one of [enum Status].
-func _tick(_ctx: DotNpcAiContext) -> Status:
+func _tick(_ctx: GSNpcAiContext) -> Status:
 	return Status.FAILURE
 
 
 ## Called on the tick this node stops, whatever it stopped with.
-func _exit(_ctx: DotNpcAiContext, _status: Status) -> void:
+func _exit(_ctx: GSNpcAiContext, _status: Status) -> void:
 	pass
 
 
 ## Called when this node is abandoned mid-action. Release things here.
-func _abort(_ctx: DotNpcAiContext) -> void:
+func _abort(_ctx: GSNpcAiContext) -> void:
 	pass
 
 

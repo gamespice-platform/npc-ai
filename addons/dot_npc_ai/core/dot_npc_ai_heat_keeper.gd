@@ -1,8 +1,8 @@
-class_name DotNpcAiHeatKeeper
+class_name GSNpcAiHeatKeeper
 extends RefCounted
 
-## Keeps a [DotNpcAiHeatmap] per map: samples players, swaps it on a map change (saving the old one first, or map B trains on map A's corridors) and saves it so a server keeps learning.
-## [codeblock]var heat := DotNpcAiHeatKeeper.new("user://npc_heat", "fc")
+## Keeps a [GSNpcAiHeatmap] per map: samples players, swaps it on a map change (saving the old one first, or map B trains on map A's corridors) and saves it so a server keeps learning.
+## [codeblock]var heat := GSNpcAiHeatKeeper.new("user://npc_heat", "fc")
 ## heat.tick(delta, map_id, player_positions, spawner.now(), spawner)  # every tick; heat.save(spawner.now()) on the way out[/codeblock]
 
 const CHANNEL := "npc.ai.heat"
@@ -19,7 +19,7 @@ var sample_every: float = 0.5
 var save_every: float = 120.0
 
 ## The heat map for [member map_id]. Never null.
-var heatmap: DotNpcAiHeatmap = DotNpcAiHeatmap.new()
+var heatmap: GSNpcAiHeatmap = GSNpcAiHeatmap.new()
 
 var map_id: StringName = &""
 
@@ -51,7 +51,7 @@ func tick(
 		_since_sample = 0.0
 
 		for at in positions:
-			heatmap.record(DotNpcAiHeatmap.TRAFFIC, at, now)
+			heatmap.record(GSNpcAiHeatmap.TRAFFIC, at, now)
 
 	if persist and _since_save >= save_every:
 		_since_save = 0.0
@@ -65,15 +65,15 @@ func adopt(p_map_id: StringName, now: float, director: Node = null) -> void:
 		save(now)
 
 	map_id = p_map_id
-	heatmap = DotNpcAiHeatmap.new()
+	heatmap = GSNpcAiHeatmap.new()
 
 	if persist and map_id != &"":
-		var loaded := DotNpcAiHeatmap.load_from(path_for(map_id), now)
+		var loaded := GSNpcAiHeatmap.load_from(path_for(map_id), now)
 
 		if loaded.ok:
 			heatmap = loaded.value
 		else:
-			DotLog.warn(CHANNEL, "a map's learned traffic could not be read; starting it again", {
+			GSLog.warn(CHANNEL, "a map's learned traffic could not be read; starting it again", {
 				"map": String(map_id), "why": loaded.error.message,
 			})
 
@@ -81,9 +81,9 @@ func adopt(p_map_id: StringName, now: float, director: Node = null) -> void:
 		heatmap.attach(director)
 
 
-## Records a player's death at [param at] into [constant DotNpcAiHeatmap.DEATHS].
+## Records a player's death at [param at] into [constant GSNpcAiHeatmap.DEATHS].
 func record_death(at: Vector3, now: float) -> void:
-	heatmap.record(DotNpcAiHeatmap.DEATHS, at, now)
+	heatmap.record(GSNpcAiHeatmap.DEATHS, at, now)
 
 
 func save(now: float) -> void:
@@ -94,7 +94,7 @@ func save(now: float) -> void:
 	var saved := heatmap.save(path_for(map_id), now)
 
 	if not saved.ok:
-		DotLog.warn(CHANNEL, "a map's learned traffic could not be saved", {
+		GSLog.warn(CHANNEL, "a map's learned traffic could not be saved", {
 			"map": String(map_id), "why": saved.error.message,
 		})
 

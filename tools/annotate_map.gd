@@ -31,7 +31,7 @@ func _num(k: String, d: float) -> float:
 
 
 func _go() -> void:
-	DotLog.set_level(DotLog.Level.WARN)
+	GSLog.set_level(GSLog.Level.WARN)
 	var source := NavigationMeshSourceGeometryData3D.new()
 	_level = Node3D.new()
 	get_root().add_child(_level)
@@ -58,7 +58,7 @@ func _go() -> void:
 	_annotate()
 
 
-## The mesh GameSpice Bot's DotBotNav would bake for this body, from [param source].
+## The mesh GameSpice Bot's GSBotNav would bake for this body, from [param source].
 static func bake(source: NavigationMeshSourceGeometryData3D, radius: float, height: float, step: float) -> NavigationMesh:
 	var mesh := NavigationMesh.new()
 	mesh.cell_size = 0.175
@@ -101,7 +101,7 @@ static func _level_from_source(source: NavigationMeshSourceGeometryData3D) -> No
 
 
 func _annotate() -> void:
-	var job := DotNpcAiNavAnnotator.new(_mesh, _level.get_world_3d())
+	var job := GSNpcAiNavAnnotator.new(_mesh, _level.get_world_3d())
 	job.agent_radius = _num("radius", 0.35)
 	job.stand_height = _num("height", 1.8)
 	job.climb = _num("climb", 0.4)
@@ -120,7 +120,7 @@ func _annotate() -> void:
 				var hi := Vector3(t["max"][0], t["max"][1], t["max"][2])
 				var to := Vector3(t["to"][0], t["to"][1], t["to"][2])
 				seeds.append(to)
-				job.declare(Vector3((lo.x + hi.x) * 0.5, lo.y, (lo.z + hi.z) * 0.5), to, DotNpcAiNavAnnotations.LINK_TELEPORT, 1.0)
+				job.declare(Vector3((lo.x + hi.x) * 0.5, lo.y, (lo.z + hi.z) * 0.5), to, GSNpcAiNavAnnotations.LINK_TELEPORT, 1.0)
 			job.seeds = seeds
 			print("meta: %d seeds, %d teleports" % [seeds.size(), (meta.get("teleports", []) as Array).size()])
 	var slowest := 0.0
@@ -132,12 +132,12 @@ func _annotate() -> void:
 		steps += 1
 		if not more:
 			break
-	var res: DotResult = job.result
+	var res: GSResult = job.result
 	if not res.ok:
 		print("annotation failed: %s" % res.error.message)
 		quit(1)
 		return
-	var a: DotNpcAiNavAnnotations = res.value
+	var a: GSNpcAiNavAnnotations = res.value
 	for line in a.describe_lines():
 		print(line)
 	print("stats %s" % JSON.stringify(a.stats))
@@ -152,8 +152,8 @@ func _annotate() -> void:
 	quit(0)
 
 
-func _photograph(a: DotNpcAiNavAnnotations, polygons: PackedInt32Array) -> void:
-	var debug := DotNpcAiNavDebug.new()
+func _photograph(a: GSNpcAiNavAnnotations, polygons: PackedInt32Array) -> void:
+	var debug := GSNpcAiNavDebug.new()
 	_level.add_child(debug)
 	debug.show_annotations(a, _mesh, polygons)
 	var env := WorldEnvironment.new()
@@ -212,12 +212,12 @@ func _photograph(a: DotNpcAiNavAnnotations, polygons: PackedInt32Array) -> void:
 		await _save(String(corner[0]))
 
 
-static func _busiest(a: DotNpcAiNavAnnotations, cell: float) -> Vector3:
+static func _busiest(a: GSNpcAiNavAnnotations, cell: float) -> Vector3:
 	var counts := {}
 	var sums := {}
 	var points: Array[Vector3] = []
 	for link in a.links:
-		if int(link["kind"]) != DotNpcAiNavAnnotations.LINK_TELEPORT:
+		if int(link["kind"]) != GSNpcAiNavAnnotations.LINK_TELEPORT:
 			points.append(link["from"])
 	for spot in a.hiding_spots():
 		points.append(spot["at"])

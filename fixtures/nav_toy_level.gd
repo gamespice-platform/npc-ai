@@ -1,6 +1,6 @@
 extends RefCounted
 
-## A small level built in code with one of everything [DotNpcAiNavAnnotator] looks for, at known places, for the suite and tools/annotate_map.
+## A small level built in code with one of everything [GSNpcAiNavAnnotator] looks for, at known places, for the suite and tools/annotate_map.
 ## A 40 by 30 floor split by a wall with one doorway (a chokepoint). West: a low platform (jump up, drop), a high balcony (drop only), a low wall (cover crouched, not standing).
 ## East: two platforms two metres apart (a jump across) and a closed room with one door (where to hide).
 
@@ -65,8 +65,8 @@ static func build_large(cells: int = 12) -> Node3D:
 	return root
 
 
-## The mesh GameSpice Bot's DotBotNav bakes for a body of [param radius] and [param height] that steps [param step], from [param root]'s static colliders (root in the tree).
-## Same numbers as DotBotNav (cell 0.175 by 0.1, body rounded to whole cells), so the suite annotates what a game would.
+## The mesh GameSpice Bot's GSBotNav bakes for a body of [param radius] and [param height] that steps [param step], from [param root]'s static colliders (root in the tree).
+## Same numbers as GSBotNav (cell 0.175 by 0.1, body rounded to whole cells), so the suite annotates what a game would.
 static func bake(root: Node3D, radius: float = 0.35, height: float = 1.8, step: float = 0.4) -> NavigationMesh:
 	var source := NavigationMeshSourceGeometryData3D.new()
 	var mesh := NavigationMesh.new()

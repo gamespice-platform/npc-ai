@@ -1,5 +1,5 @@
 @tool
-class_name DotNpcAiCharacter
+class_name GSNpcAiCharacter
 extends Resource
 
 ## Who this NPC is, as numbers: reaction time, aim, aggression and the rest of a per-bot characteristics table, which is what makes two NPCs on one tree different people. Left out: chat, weapon-specific aim, item weights and grapple moves (owned by other addons or specific to one engine).
@@ -7,7 +7,7 @@ extends Resource
 ## `if not character.has_reacted(npc.target_seen_at, ctx.now): return Status.RUNNING`
 
 # No log channel: a Resource of numbers and the pure functions over them, asked every
-# think by every NPC. validate()/from_dictionary() return a DotResult for the loader.
+# think by every NPC. validate()/from_dictionary() return a GSResult for the loader.
 
 ## The widest an inaccurate shot may miss by, in degrees, at [member aim_accuracy] 0.
 ## Twelve degrees is a body width at fifteen metres; wider and the worst bot hits nothing, which reads as broken, not bad.
@@ -121,8 +121,8 @@ var _turns: int = 0
 
 
 ## The four a game actually ships. Named after what a player would call them.
-static func easy() -> DotNpcAiCharacter:
-	var out := DotNpcAiCharacter.new()
+static func easy() -> GSNpcAiCharacter:
+	var out := GSNpcAiCharacter.new()
 	out.id = &"easy"
 	out.display_name = "Easy"
 	out.reaction_time = 1.1
@@ -141,15 +141,15 @@ static func easy() -> DotNpcAiCharacter:
 	return out
 
 
-static func normal() -> DotNpcAiCharacter:
-	var out := DotNpcAiCharacter.new()
+static func normal() -> GSNpcAiCharacter:
+	var out := GSNpcAiCharacter.new()
 	out.id = &"normal"
 	out.display_name = "Normal"
 	return out
 
 
-static func hard() -> DotNpcAiCharacter:
-	var out := DotNpcAiCharacter.new()
+static func hard() -> GSNpcAiCharacter:
+	var out := GSNpcAiCharacter.new()
 	out.id = &"hard"
 	out.display_name = "Hard"
 	out.reaction_time = 0.18
@@ -168,8 +168,8 @@ static func hard() -> DotNpcAiCharacter:
 
 ## As good as this gets, and deliberately not perfect.
 ## Reaction time stays above zero and accuracy below one: an instant, never-missing bot is a different game, not a harder one.
-static func nightmare() -> DotNpcAiCharacter:
-	var out := DotNpcAiCharacter.new()
+static func nightmare() -> GSNpcAiCharacter:
+	var out := GSNpcAiCharacter.new()
 	out.id = &"nightmare"
 	out.display_name = "Nightmare"
 	out.reaction_time = 0.08
@@ -189,7 +189,7 @@ static func nightmare() -> DotNpcAiCharacter:
 
 ## The preset a name means, or [method normal] for one it does not know.
 ## For a catalogue's `"skill": "hard"` in a definition's `meta`. Unknown names are normal, not an error: a typo should give an ordinary NPC, not a spawner that refuses to spawn one.
-static func preset(preset_name: String) -> DotNpcAiCharacter:
+static func preset(preset_name: String) -> GSNpcAiCharacter:
 	match preset_name.strip_edges().to_lower():
 		"easy":
 			return easy()
@@ -206,14 +206,14 @@ static func preset(preset_name: String) -> DotNpcAiCharacter:
 const STATS_TIERS := {"easy": "p80", "normal": "p50", "hard": "p20"}
 
 ## A character whose reaction and aim come from recorded people, on top of the [param tier] preset (easy, normal or hard).
-## [param stats] is `{metric: {"p20": x, "p50": x, "p80": x}}` or any object with a `percentiles()` returning one (GameSpice Bot's `DotBotAimStats`), duck typed so neither addon names the other.
+## [param stats] is `{metric: {"p20": x, "p50": x, "p80": x}}` or any object with a `percentiles()` returning one (GameSpice Bot's `GSBotAimStats`), duck typed so neither addon names the other.
 ## Metrics: `reaction` (seconds, to [member reaction_time]), `aim_error` (degrees, to [member aim_accuracy]), `tracking` (degrees on a mover, to [member aim_skill]). A missing or NaN value keeps the preset's number; nothing goes past nightmare.
-static func from_percentiles(stats: Variant, tier: String = "normal") -> DotResult:
+static func from_percentiles(stats: Variant, tier: String = "normal") -> GSResult:
 	var table: Variant = stats
 	if stats is Object and (stats as Object).has_method(&"percentiles"):
 		table = (stats as Object).call(&"percentiles")
 	if not table is Dictionary:
-		return DotResult.fail(DotError.CODE_INVALID, "Percentiles must be a Dictionary or have percentiles().", tier)
+		return GSResult.fail(GSError.CODE_INVALID, "Percentiles must be a Dictionary or have percentiles().", tier)
 	var key: String = STATS_TIERS.get(tier.strip_edges().to_lower(), "p50")
 	var out := preset(tier)
 	var best := nightmare()
@@ -231,10 +231,10 @@ static func from_percentiles(stats: Variant, tier: String = "normal") -> DotResu
 		out.aim_skill = clampf(1.0 - track / MAX_AIM_ERROR_DEG, 0.0, best.aim_skill)
 		used += 1
 	if used == 0:
-		return DotResult.fail(DotError.CODE_INVALID, "No usable reaction, aim_error or tracking percentile.", tier)
+		return GSResult.fail(GSError.CODE_INVALID, "No usable reaction, aim_error or tracking percentile.", tier)
 	out.id = StringName("people_" + String(out.id))
 	out.display_name = "People (%s)" % out.display_name
-	return DotResult.success(out)
+	return GSResult.success(out)
 
 
 static func _stat(table: Dictionary, metric: String, key: String) -> float:
@@ -246,7 +246,7 @@ static func _stat(table: Dictionary, metric: String, key: String) -> float:
 
 
 ## Whether enough time has passed since [param seen_at] for this NPC to act.
-## [param seen_at] is when the NPC committed to the target (`DotNpcInstance.target_since`), NOT `engaged_at`, which refreshes on every sighting and never lets a reaction elapse.
+## [param seen_at] is when the NPC committed to the target (`GSNpcInstance.target_since`), NOT `engaged_at`, which refreshes on every sighting and never lets a reaction elapse.
 ## A [member reaction_time] of zero or less answers true at once, for scripted NPCs.
 func has_reacted(seen_at: float, now: float) -> bool:
 	if reaction_time <= 0.0:
@@ -498,27 +498,27 @@ func signed_unit(salt: int) -> float:
 
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if reaction_time < 0.0:
-		return DotResult.fail(
-			DotError.CODE_INVALID, "Reaction time cannot be negative.", String(id)
+		return GSResult.fail(
+			GSError.CODE_INVALID, "Reaction time cannot be negative.", String(id)
 		)
 
 	if alertness <= 0.0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"Alertness of zero means an NPC that can never see anything.",
 			String(id)
 		)
 
 	if view_turn_deg <= 0.0:
-		return DotResult.fail(
-			DotError.CODE_INVALID,
+		return GSResult.fail(
+			GSError.CODE_INVALID,
 			"A view that cannot turn is an NPC that can never face anything.",
 			String(id)
 		)
 
-	return DotResult.success(self)
+	return GSResult.success(self)
 
 
 func to_dictionary() -> Dictionary:
@@ -552,8 +552,8 @@ func to_dictionary() -> Dictionary:
 	}
 
 
-static func from_dictionary(data: Dictionary) -> DotResult:
-	var out := DotNpcAiCharacter.new()
+static func from_dictionary(data: Dictionary) -> GSResult:
+	var out := GSNpcAiCharacter.new()
 
 	out.id = StringName(str(data.get("id", "")))
 	out.display_name = str(data.get("name", ""))
@@ -591,8 +591,8 @@ static func from_dictionary(data: Dictionary) -> DotResult:
 
 ## A copy with its own seed, so twenty NPCs of one preset do not miss identically.
 ## Easy to forget: one preset resource shared by twenty NPCs shares one seed, and they all take the same shot with the same error at once.
-func with_seed(new_seed: int) -> DotNpcAiCharacter:
-	var out: DotNpcAiCharacter = duplicate(true)
+func with_seed(new_seed: int) -> GSNpcAiCharacter:
+	var out: GSNpcAiCharacter = duplicate(true)
 	out.seed_value = new_seed
 	return out
 
@@ -609,4 +609,4 @@ func describe() -> Dictionary:
 
 
 func _to_string() -> String:
-	return "DotNpcAiCharacter(%s)" % String(id)
+	return "GSNpcAiCharacter(%s)" % String(id)

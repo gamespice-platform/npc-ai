@@ -1,4 +1,4 @@
-class_name DotNpcAiHeatmap
+class_name GSNpcAiHeatmap
 extends RefCounted
 
 ## Where players go on a map, learned by watching them, and kept between rounds: a grid of cells with a weight per channel ([constant TRAFFIC], [constant DEATHS], or a game's own) that decays with a half-life, so it pictures recent play.
@@ -175,18 +175,18 @@ func to_dictionary(now: float) -> Dictionary:
 
 ## Reads [method to_dictionary]'s document, stamping every cell at [param now].
 ## A different cell size is refused, not reinterpreted: three-metre cells read as two-metre put every hot corridor in the wrong place.
-static func from_dictionary(data: Dictionary, now: float = 0.0) -> DotResult:
-	var out := DotNpcAiHeatmap.new()
+static func from_dictionary(data: Dictionary, now: float = 0.0) -> GSResult:
+	var out := GSNpcAiHeatmap.new()
 	out.cell_size = float(data.get("cell_size", out.cell_size))
 	out.half_life = float(data.get("half_life", out.half_life))
 
 	if out.cell_size <= 0.0:
-		return DotResult.fail(DotError.CODE_INVALID, "A heat map needs a positive cell size.")
+		return GSResult.fail(GSError.CODE_INVALID, "A heat map needs a positive cell size.")
 
 	var channels: Variant = data.get("channels", {})
 
 	if not (channels is Dictionary):
-		return DotResult.fail(DotError.CODE_INVALID, "A heat map's channels must be a dictionary.")
+		return GSResult.fail(GSError.CODE_INVALID, "A heat map's channels must be a dictionary.")
 
 	for channel in (channels as Dictionary).keys():
 		var rows: Variant = channels[channel]
@@ -202,35 +202,35 @@ static func from_dictionary(data: Dictionary, now: float = 0.0) -> DotResult:
 
 		out._channels[StringName(channel)] = cells
 
-	return DotResult.success(out)
+	return GSResult.success(out)
 
 
 ## Writes this to [param path] as JSON. For a game keeping a map's heat across restarts.
-func save(path: String, now: float) -> DotResult:
+func save(path: String, now: float) -> GSResult:
 	var file := FileAccess.open(path, FileAccess.WRITE)
 
 	if file == null:
-		return DotResult.fail(
-			DotError.CODE_IO, "Could not write the heat map.", error_string(FileAccess.get_open_error())
+		return GSResult.fail(
+			GSError.CODE_IO, "Could not write the heat map.", error_string(FileAccess.get_open_error())
 		)
 
 	file.store_string(JSON.stringify(to_dictionary(now)))
 	file.close()
-	DotWeb.sync_filesystem()
-	return DotResult.success(path)
+	GSWeb.sync_filesystem()
+	return GSResult.success(path)
 
 
 ## Reads a heat map written by [method save]. A missing file is not an error: it is a map
 ## nobody has played yet, and the result is an empty heat map.
-static func load_from(path: String, now: float = 0.0) -> DotResult:
+static func load_from(path: String, now: float = 0.0) -> GSResult:
 	if not FileAccess.file_exists(path):
-		return DotResult.success(DotNpcAiHeatmap.new())
+		return GSResult.success(GSNpcAiHeatmap.new())
 
 	var text := FileAccess.get_file_as_string(path)
 	var parsed: Variant = JSON.parse_string(text)
 
 	if not (parsed is Dictionary):
-		return DotResult.fail(DotError.CODE_PARSE, "The heat map file is not a JSON object.", path)
+		return GSResult.fail(GSError.CODE_PARSE, "The heat map file is not a JSON object.", path)
 
 	return from_dictionary(parsed, now)
 
@@ -240,11 +240,11 @@ func attach(director: Node) -> void:
 		director.set_meta(META, self)
 
 
-static func of(director: Object) -> DotNpcAiHeatmap:
+static func of(director: Object) -> GSNpcAiHeatmap:
 	if director == null or not director.has_meta(META):
 		return null
 
-	return director.get_meta(META) as DotNpcAiHeatmap
+	return director.get_meta(META) as GSNpcAiHeatmap
 
 
 func describe() -> Dictionary:

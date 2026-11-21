@@ -1,8 +1,8 @@
-class_name DotNpcAiNavAnnotator
+class_name GSNpcAiNavAnnotator
 extends "dot_npc_ai_nav_annotator_islands.gd"
 
-## Works out a map's [DotNpcAiNavAnnotations] from a baked [NavigationMesh] and its colliders: links (drop, jump up, jump across), cover and hiding spots, chokepoints.
-## [b]Why rays and not the engine's off-mesh links:[/b] the engine bakes none, and where one belongs is geometric, so rays against the colliders work on any map with no editor step. It is a [DotJob] stepped in slices (physics queries only on the main thread), deterministic for a given mesh, settings and [member random_seed].
+## Works out a map's [GSNpcAiNavAnnotations] from a baked [NavigationMesh] and its colliders: links (drop, jump up, jump across), cover and hiding spots, chokepoints.
+## [b]Why rays and not the engine's off-mesh links:[/b] the engine bakes none, and where one belongs is geometric, so rays against the colliders work on any map with no editor step. It is a [GSJob] stepped in slices (physics queries only on the main thread), deterministic for a given mesh, settings and [member random_seed].
 ## Subclass or assign: [member los_fn], [method _keep_link], [method _hide_score], [method declare] (ladders, teleports). Usage: docs/navigation-annotations.md.
 
 func _init(mesh: NavigationMesh = null, world: World3D = null) -> void:
@@ -28,8 +28,8 @@ func declare(from: Vector3, to: Vector3, kind: int, cost: float = 1.0) -> void:
 func _setup() -> void:
 	_started_us = Time.get_ticks_usec()
 	_phase_started_us = _started_us
-	_rng = DotRandomStream.new(random_seed, &"nav_annotate")
-	annotations = DotNpcAiNavAnnotations.new()
+	_rng = GSRandomStream.new(random_seed, &"nav_annotate")
+	annotations = GSNpcAiNavAnnotations.new()
 	_rays = 0
 	_query = null
 	_link_cells = {}
@@ -42,10 +42,10 @@ func _progress() -> float:
 
 func _step() -> bool:
 	if _mesh == null or _mesh.get_polygon_count() == 0:
-		_finish(DotResult.fail(DotError.CODE_INVALID, "nothing to annotate: the mesh is empty"))
+		_finish(GSResult.fail(GSError.CODE_INVALID, "nothing to annotate: the mesh is empty"))
 		return false
 	if _world == null or _world.direct_space_state == null:
-		_finish(DotResult.fail(DotError.CODE_STATE, "nothing to measure against: no physics space"))
+		_finish(GSResult.fail(GSError.CODE_STATE, "nothing to measure against: no physics space"))
 		return false
 
 	var began := Time.get_ticks_usec()
@@ -123,11 +123,11 @@ func _complete() -> void:
 		"islands": _island_count(), "islands_kept": _kept.size(), "links_joining_islands": joining, "routes": _routes_done,
 		"rays": _rays,
 	}
-	DotLog.info(CHANNEL, "annotated a map", {
+	GSLog.info(CHANNEL, "annotated a map", {
 		"links": annotations.link_counts(), "spots": annotations.spots.size(), "hiding": annotations.hiding.size(),
 		"chokepoints": annotations.chokepoints.size(), "ms": snappedf(ms, 0.1), "key": annotations.key.left(12),
 	})
-	_finish(DotResult.success(annotations))
+	_finish(GSResult.success(annotations))
 
 
 func _step_polygons() -> void:
@@ -271,9 +271,9 @@ func _classify(p: Vector3, n: Vector3, polygon: int) -> void:
 	var depth := p.y - land.y
 	if depth <= climb + 0.1:
 		return
-	_offer_link(p, land, DotNpcAiNavAnnotations.LINK_DROP, 1.0 + depth * 0.15)
+	_offer_link(p, land, GSNpcAiNavAnnotations.LINK_DROP, 1.0 + depth * 0.15)
 	if depth <= jump_up:
-		_offer_link(land, p, DotNpcAiNavAnnotations.LINK_JUMP_UP, 1.5 + depth)
+		_offer_link(land, p, GSNpcAiNavAnnotations.LINK_JUMP_UP, 1.5 + depth)
 
 
 ## The point on the mesh nearest below [param ground] going on along [param n], or NAN.
@@ -299,7 +299,7 @@ func _try_gap(p: Vector3, n: Vector3) -> void:
 		if not hit.is_empty():
 			var land := _landing(hit["position"], n)
 			if not is_nan(land.x) and _ray(p + lift, land + lift).is_empty():
-				_offer_link(p, land, DotNpcAiNavAnnotations.LINK_JUMP_GAP, 1.5 + dist * 0.3)
+				_offer_link(p, land, GSNpcAiNavAnnotations.LINK_JUMP_GAP, 1.5 + dist * 0.3)
 				return
 			# Something at this height that is not a landing (a wall top, a rail): no gap.
 			if is_nan(land.x):
@@ -420,8 +420,8 @@ func _step_spots() -> void:
 				blocked += 1
 		var low_mask := 0
 		var high_mask := 0
-		for k in range(DotNpcAiNavAnnotations.COVER_DIRECTIONS):
-			var dir := DotNpcAiNavAnnotations.direction(k)
+		for k in range(GSNpcAiNavAnnotations.COVER_DIRECTIONS):
+			var dir := GSNpcAiNavAnnotations.direction(k)
 			if _ray(at + low, at + low + dir * (agent_radius + 0.9)).size() > 0:
 				low_mask |= 1 << k
 			if _ray(at + high, at + high + dir * (agent_radius + 0.9)).size() > 0:

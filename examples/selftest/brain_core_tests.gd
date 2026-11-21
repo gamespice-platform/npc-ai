@@ -4,10 +4,10 @@ extends "res://examples/selftest/conditions_tests.gd"
 ## crowd sections; brain_tests.gd extends this.
 
 
-func _catalogue() -> DotNpcCatalogue:
-	var cat := DotNpcCatalogue.new()
+func _catalogue() -> GSNpcCatalogue:
+	var cat := GSNpcCatalogue.new()
 
-	var zombie := DotNpcDef.make(&"zombie", BODY)
+	var zombie := GSNpcDef.make(&"zombie", BODY)
 	zombie.brain_script_path = BRAIN
 	zombie.require_line_of_sight = false
 	zombie.sight_half_angle_deg = 180.0
@@ -21,13 +21,13 @@ func _catalogue() -> DotNpcCatalogue:
 	# Chase, search, idle, with its character named in the catalogue rather than chosen by
 	# its script — the half of a character an operator editing JSON can reach.
 	# A body that moves by position alone, so the distance walked is exactly speed times the delta given.
-	var plain := DotNpcDef.make(&"plain", "res://fixtures/npc_plain_body.tscn")
+	var plain := GSNpcDef.make(&"plain", "res://fixtures/npc_plain_body.tscn")
 	plain.brain_script_path = BRAIN
 	plain.require_line_of_sight = false
 	plain.meta = {"speed": 4.0}
 	cat.add(plain)
 
-	var searcher := DotNpcDef.make(&"searcher", BODY)
+	var searcher := GSNpcDef.make(&"searcher", BODY)
 	searcher.brain_script_path = SEARCHER
 	searcher.require_line_of_sight = false
 	searcher.sight_half_angle_deg = 180.0
@@ -37,7 +37,7 @@ func _catalogue() -> DotNpcCatalogue:
 
 	# The same brain as a squad member: a hard character, one attack slot per target, a ring
 	# of four metres for the rest.
-	var soldier := DotNpcDef.make(&"soldier", BODY)
+	var soldier := GSNpcDef.make(&"soldier", BODY)
 	soldier.brain_script_path = SEARCHER
 	soldier.require_line_of_sight = false
 	soldier.sight_half_angle_deg = 180.0
@@ -47,7 +47,7 @@ func _catalogue() -> DotNpcCatalogue:
 	}
 	cat.add(soldier)
 
-	var gunner := DotNpcDef.make(&"gunner", BODY)
+	var gunner := GSNpcDef.make(&"gunner", BODY)
 	gunner.brain_script_path = GUNNER
 	gunner.require_line_of_sight = false
 	gunner.sight_half_angle_deg = 180.0
@@ -58,11 +58,11 @@ func _catalogue() -> DotNpcCatalogue:
 	return cat
 
 
-func _spawner() -> DotNpcSpawner:
-	var spawner := DotNpcSpawner.new()
+func _spawner() -> GSNpcSpawner:
+	var spawner := GSNpcSpawner.new()
 	spawner.catalogue = _catalogue()
 
-	var limits := DotNpcLimits.new()
+	var limits := GSNpcLimits.new()
 	limits.spawn_interval = 0.0
 	limits.require_navigable_spawn = false
 	limits.sense_period_ticks = 1
@@ -74,10 +74,10 @@ func _spawner() -> DotNpcSpawner:
 	return spawner
 
 
-func _check_stuck_progress(brain: DotNpcAiBrain, spawner: DotNpcSpawner) -> void:
+func _check_stuck_progress(brain: GSNpcAiBrain, spawner: GSNpcSpawner) -> void:
 	# Steering at somewhere and getting nowhere for stuck_seconds asks for an unsmoothed path.
 	if brain.path == null:
-		brain.path = DotNpcPath.new()
+		brain.path = GSNpcPath.new()
 	brain._watch_progress(Vector3.ZERO, Vector3(10, 0, 0))
 	brain._progress_since -= brain.stuck_seconds + 0.1
 	brain._watch_progress(Vector3(0.1, 0, 0), Vector3(10, 0, 0))
@@ -99,16 +99,16 @@ func _test_brain_on_a_real_npc() -> void:
 	var npc := spawner.spawn(&"zombie", Vector3.ZERO)
 
 	_check(npc.brain != null, "dot-npc loads a dot-npc-ai brain by PATH")
-	_check(npc.brain is DotNpcAiBrain, "and it is one")
+	_check(npc.brain is GSNpcAiBrain, "and it is one")
 
-	var brain := npc.brain as DotNpcAiBrain
+	var brain := npc.brain as GSNpcAiBrain
 	_check(brain.machine != null and brain.tree != null, "with both halves built")
 	_check(brain.machine.current() == &"idle", "starting in its initial state")
 
 	_check_stuck_progress(brain, spawner)
 
 	spawner.set_candidates([
-		DotNpcSenses.Candidate.new(&"player", Vector3(0, 0, -12), &"player")
+		GSNpcSenses.Candidate.new(&"player", Vector3(0, 0, -12), &"player")
 	])
 
 	for i in 30:
@@ -153,7 +153,7 @@ func _test_brain_on_a_real_npc() -> void:
 	spawner.free()
 
 	_check(brain_ref.get_ref() == null, "a freed spawner's brains are freed with it",
-		"DotNpcAiBrain._npc_unbound did not break the context <-> brain cycle")
+		"GSNpcAiBrain._npc_unbound did not break the context <-> brain cycle")
 	_check(context_ref.get_ref() == null, "and their contexts")
 	_check(npc_ref.get_ref() == null, "and the NPCs they were driving")
 	_done()
@@ -162,11 +162,11 @@ func _test_brain_on_a_real_npc() -> void:
 func _test_brain_under_a_scheduler() -> void:
 	_section("a brain under the level-of-detail scheduler")
 
-	var plain := _spawner().spawn(&"zombie", Vector3.ZERO).brain as DotNpcAiBrain
+	var plain := _spawner().spawn(&"zombie", Vector3.ZERO).brain as GSNpcAiBrain
 	_check(plain.scheduler == null, "with no scheduler registered a brain thinks as it always did")
 
-	var sched := DotNpcAiScheduler.new()
-	var cfg := DotNpcAiSchedulerConfig.new()
+	var sched := GSNpcAiScheduler.new()
+	var cfg := GSNpcAiSchedulerConfig.new()
 	cfg.enabled = true
 	sched.apply_config(cfg)
 	sched.auto_advance = false
@@ -175,8 +175,8 @@ func _test_brain_under_a_scheduler() -> void:
 	sched.register_service()
 
 	var spawner := _spawner()
-	var near := spawner.spawn(&"zombie", Vector3(5, 0, 0)).brain as DotNpcAiBrain
-	var far := spawner.spawn(&"zombie", Vector3(200, 0, 0)).brain as DotNpcAiBrain
+	var near := spawner.spawn(&"zombie", Vector3(5, 0, 0)).brain as GSNpcAiBrain
+	var far := spawner.spawn(&"zombie", Vector3(200, 0, 0)).brain as GSNpcAiBrain
 	_check(near.scheduler == sched and far.scheduler == sched, "a brain finds the scheduler on the registry")
 	_check(sched.tier_of(near) == 0 and sched.tier_of(far) == 3, "and is tiered by its distance to the player",
 		"%d and %d" % [sched.tier_of(near), sched.tier_of(far)])
@@ -193,16 +193,16 @@ func _test_brain_under_a_scheduler() -> void:
 	var far_npc_id := far.npc.instance_id
 	spawner.remove(far_npc_id)
 	_check(sched.tier_counts()[3] == 0, "a removed NPC's brain leaves the scheduler")
-	DotRegistry.unregister(DotNpcAiScheduler.SERVICE)
+	GSRegistry.unregister(GSNpcAiScheduler.SERVICE)
 	_done()
 
 
-func _walker(spawner: DotNpcSpawner, at: Vector3, goal: Vector3) -> DotNpcAiBrain:
-	var brain := spawner.spawn(&"zombie", at).brain as DotNpcAiBrain
+func _walker(spawner: GSNpcSpawner, at: Vector3, goal: Vector3) -> GSNpcAiBrain:
+	var brain := spawner.spawn(&"zombie", at).brain as GSNpcAiBrain
 	brain.machine = null
-	brain.tree = DotNpcAiLeaf.Action.new(&"go", func(ctx: DotNpcAiContext) -> DotNpcAiNode.Status:
+	brain.tree = GSNpcAiLeaf.Action.new(&"go", func(ctx: GSNpcAiContext) -> GSNpcAiNode.Status:
 		brain.steer_with_spacing(goal, 6.0, ctx.delta)
-		return DotNpcAiNode.Status.RUNNING)
+		return GSNpcAiNode.Status.RUNNING)
 	return brain
 
 
@@ -226,7 +226,7 @@ func _test_crowd_separation() -> void:
 	spawner.spawn_group(&"zombie", Vector3.ZERO, 12, 4.0)
 
 	spawner.set_candidates([
-		DotNpcSenses.Candidate.new(&"player", goal, &"player")
+		GSNpcSenses.Candidate.new(&"player", goal, &"player")
 	])
 
 	# Six seconds. Four is enough for eleven of the twelve and leaves one straggler

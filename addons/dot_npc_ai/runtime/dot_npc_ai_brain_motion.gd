@@ -1,12 +1,12 @@
 extends "dot_npc_ai_brain_state.gd"
 
-## Steering, pathing and the scheduler hookup of [DotNpcAiBrain]: how the NPC moves. Not a public class: extend [DotNpcAiBrain] (by path), never this.
+## Steering, pathing and the scheduler hookup of [GSNpcAiBrain]: how the NPC moves. Not a public class: extend [GSNpcAiBrain] (by path), never this.
 
 
 ## The scheduler on the registry, or null.
-func _find_scheduler() -> DotNpcAiScheduler:
-	var found: Object = DotNpcAiScheduler.find()
-	return found as DotNpcAiScheduler if found != null and is_instance_valid(found) else null
+func _find_scheduler() -> GSNpcAiScheduler:
+	var found: Object = GSNpcAiScheduler.find()
+	return found as GSNpcAiScheduler if found != null and is_instance_valid(found) else null
 
 
 func _join_scheduler() -> void:
@@ -17,7 +17,7 @@ func _join_scheduler() -> void:
 
 
 ## The live scheduler or null: a freed one is dropped, and one registered after this brain was bound is found within a second.
-func _sched() -> DotNpcAiScheduler:
+func _sched() -> GSNpcAiScheduler:
 	if scheduler != null:
 		if is_instance_valid(scheduler):
 			return scheduler
@@ -46,7 +46,7 @@ func steer_toward(to: Vector3, speed: float, delta: float) -> void:
 	super(to, speed, delta)
 
 
-## [method DotNpcBrain.steer_along_path] that remembers the destination and asks the scheduler for the path.
+## [method GSNpcBrain.steer_along_path] that remembers the destination and asks the scheduler for the path.
 func steer_along_path(to: Vector3, speed: float, delta: float) -> void:
 	if npc == null or not npc.is_alive():
 		return
@@ -205,7 +205,7 @@ func _world_now() -> float:
 
 
 ## Turns toward [param direction] no faster than this character can.
-## Every turn the brain makes goes through here, steering included (GameSpice NPC's `steer_toward` faces the way it moves), so the sight cone swings at [member DotNpcAiCharacter.view_turn_deg]; otherwise NPCs snap round in one tick and a player cannot get behind one.
+## Every turn the brain makes goes through here, steering included (GameSpice NPC's `steer_toward` faces the way it moves), so the sight cone swings at [member GSNpcAiCharacter.view_turn_deg]; otherwise NPCs snap round in one tick and a player cannot get behind one.
 ## Limited from where the NPC faced at the START of the think, so a steer and then a look do not turn it twice as far.
 func face(direction: Vector3) -> void:
 	if character == null or context == null or context.delta <= 0.0 or npc == null:
@@ -242,7 +242,7 @@ func neighbours(radius: float) -> Array:
 		return out
 
 	for entry in (found as Array):
-		var other := entry as DotNpcInstance
+		var other := entry as GSNpcInstance
 
 		if other != null and other.instance_id != npc.instance_id:
 			out.append(other.position())
@@ -252,9 +252,9 @@ func neighbours(radius: float) -> Array:
 
 ## The push away from the neighbours within [param spacing] of [param here]: what
 ## [method steer_with_spacing] and [method surround] blend in. A host with its own crowd index
-## overrides it (see [DotNpcAiCrowdGrid]) to skip building [method neighbours]' array.
+## overrides it (see [GSNpcAiCrowdGrid]) to skip building [method neighbours]' array.
 func separation(here: Vector3, spacing: float, right: Vector3) -> Vector3:
-	return DotNpcAiSteering.separate(here, neighbours(spacing), spacing, right)
+	return GSNpcAiSteering.separate(here, neighbours(spacing), spacing, right)
 
 
 ## Steers toward [param to] while keeping [param spacing] metres from the neighbours.
@@ -292,9 +292,9 @@ func steer_with_spacing(
 
 ## [method steer_with_spacing]'s heading before avoidance: the seek from [param here] to [param goal] and
 ## [method separation]'s push off the crowd within [param spacing], blended, flat and unit (zero when they cancel).
-## A host with a native crowd overrides it to answer in one call (Zombie Zone's `DotSimCrowdGrid.spaced_direction`).
+## A host with a native crowd overrides it to answer in one call (Zombie Zone's `GSSimCrowdGrid.spaced_direction`).
 func _spaced_direction(here: Vector3, goal: Vector3, spacing: float) -> Vector3:
-	var wanted := DotNpcAiSteering.seek(here, goal)
+	var wanted := GSNpcAiSteering.seek(here, goal)
 
 		# The NPC's own right as the tie-break for a stack: it differs per NPC, so two stacked NPCs are shoved
 		# apart in different directions, not travel as a tower. From `facing()` turned a quarter turn about Y,
@@ -312,14 +312,14 @@ func _spaced_direction(here: Vector3, goal: Vector3, spacing: float) -> Vector3:
 
 
 ## The enabled avoidance node on the registry, or null; looked for about once a second.
-func _avoider() -> DotNpcAiAvoidance:
+func _avoider() -> GSNpcAiAvoidance:
 	if _avoid_node != null and is_instance_valid(_avoid_node):
 		return _avoid_node if _avoid_node.config.enabled else null
 	_avoid_node = null
 	_avoid_probe -= 1
 	if _avoid_probe <= 0:
 		_avoid_probe = 60
-		_avoid_node = DotNpcAiAvoidance.find() as DotNpcAiAvoidance
+		_avoid_node = GSNpcAiAvoidance.find() as GSNpcAiAvoidance
 	return _avoid_node if _avoid_node != null and _avoid_node.config.enabled else null
 
 

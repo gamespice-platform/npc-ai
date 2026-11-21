@@ -1,7 +1,7 @@
-class_name DotNpcAiTokenConfig
-extends DotConfig
+class_name GSNpcAiTokenConfig
+extends GSConfig
 
-## Every number of [DotNpcAiSquad]'s attack tokens and flanking. Layered like any DotConfig: defaults, JSON, environment, command line.
+## Every number of [GSNpcAiSquad]'s attack tokens and flanking. Layered like any GSConfig: defaults, JSON, environment, command line.
 
 ## Off by default: with it off a squad hands out only its plain slots, as before.
 @export var enabled: bool = false
@@ -47,7 +47,7 @@ func cli_prefix() -> String:
 	return "--npc-ai-tokens-"
 
 
-func validate() -> DotResult:
+func validate() -> GSResult:
 	if per_target_cap > pool_size:
-		return DotResult.fail(DotError.CODE_INVALID, "per_target_cap cannot exceed pool_size")
-	return DotResult.success(null)
+		return GSResult.fail(GSError.CODE_INVALID, "per_target_cap cannot exceed pool_size")
+	return GSResult.success(null)

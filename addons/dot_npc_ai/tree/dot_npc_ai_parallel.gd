@@ -1,5 +1,5 @@
-class_name DotNpcAiParallel
-extends DotNpcAiComposite
+class_name GSNpcAiParallel
+extends GSNpcAiComposite
 
 ## Runs every child every tick. "Walk there while shooting and shouting."
 ## Not concurrency: children are ticked in order within one call, and "parallel" means all of them get a tick.
@@ -12,11 +12,11 @@ var success_threshold: int = 0
 var failure_threshold: int = 1
 
 
-func _init(p_name: StringName = &"", p_children: Array[DotNpcAiNode] = []) -> void:
+func _init(p_name: StringName = &"", p_children: Array[GSNpcAiNode] = []) -> void:
 	super(p_name, p_children)
 
 
-func _tick(ctx: DotNpcAiContext) -> Status:
+func _tick(ctx: GSNpcAiContext) -> Status:
 	var succeeded := 0
 	var failed := 0
 
@@ -46,12 +46,12 @@ func _tick(ctx: DotNpcAiContext) -> Status:
 
 
 ## Abandons every child still running. A parallel has no single running child, so
-## [method DotNpcAiComposite._abort_running] is not enough here.
-func _abort_children(ctx: DotNpcAiContext) -> void:
+## [method GSNpcAiComposite._abort_running] is not enough here.
+func _abort_children(ctx: GSNpcAiContext) -> void:
 	for child in _children:
 		if child.is_running:
 			child.abort(ctx)
 
 
-func _abort(ctx: DotNpcAiContext) -> void:
+func _abort(ctx: GSNpcAiContext) -> void:
 	_abort_children(ctx)

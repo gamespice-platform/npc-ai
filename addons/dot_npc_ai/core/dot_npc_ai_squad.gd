@@ -1,9 +1,9 @@
-class_name DotNpcAiSquad
+class_name GSNpcAiSquad
 extends RefCounted
 
 ## NPCs that fight together: what one sees the rest know, and only so many attack at once. A few named slots per squad (two attack, one grenades, one flanks) stop twelve NPCs queueing in a line; one that misses the attack slot surrounds, flanks or waits, and the next steps in when an attacker dies.
-## A member that sees an enemy tells the squad: second-hand in the others' [DotNpcAiMemory], with the sighter's velocity. Members are held weakly by instance id, since squad and brains pointing at each other is a cycle GDScript never frees.
-## GameSpice Core only: a member is any object with the methods it is called with, so [DotNpcAiBrain] joins without this file naming it.
+## A member that sees an enemy tells the squad: second-hand in the others' [GSNpcAiMemory], with the sighter's velocity. Members are held weakly by instance id, since squad and brains pointing at each other is a cycle GDScript never frees.
+## GameSpice Core only: a member is any object with the methods it is called with, so [GSNpcAiBrain] joins without this file naming it.
 
 # Slots and sharing are asked every think and do not log; the token pool logs its grants and releases.
 
@@ -46,7 +46,7 @@ var _latest_seq: Dictionary = {}
 const LOG_KEEP := 256
 
 ## Attack tokens: a pool with a per-target cap on top of the plain slots. Off until `tokens.enabled`.
-var tokens: DotNpcAiTokenConfig = DotNpcAiTokenConfig.new()
+var tokens: GSNpcAiTokenConfig = GSNpcAiTokenConfig.new()
 
 ## Counts of grants, refusals and each release reason, for describe() and suites.
 var token_stats := {"granted": 0, "refused": 0, "kill": 0, "timeout": 0, "los": 0, "left": 0, "manual": 0}
@@ -433,7 +433,7 @@ func take_token(member: Object, target: StringName, now: float) -> bool:
 	var life := tokens.timeout_s * (1.0 - tokens.timeout_jitter * _rng.randf())
 	_tokens[key] = {"target": target, "taken": now, "until": now + life, "unseen_since": INF}
 	token_stats["granted"] += 1
-	DotLog.debug(CHANNEL, "attack token granted", {"squad": String(squad_name), "target": String(target), "held": _tokens.size()})
+	GSLog.debug(CHANNEL, "attack token granted", {"squad": String(squad_name), "target": String(target), "held": _tokens.size()})
 	return true
 
 
@@ -529,7 +529,7 @@ func _drop_token(key: int, reason: StringName, now: float) -> void:
 	if _slots.has(slot):
 		(_slots[slot] as Array).erase(key)
 
-	DotLog.debug(CHANNEL, "attack token released", {"squad": String(squad_name), "reason": String(reason), "held": _tokens.size()})
+	GSLog.debug(CHANNEL, "attack token released", {"squad": String(squad_name), "reason": String(reason), "held": _tokens.size()})
 
 
 ## True when no member that has waited longer on [param target] is still asking and could be served.

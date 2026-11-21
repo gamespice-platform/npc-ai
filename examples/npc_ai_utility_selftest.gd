@@ -25,12 +25,12 @@ class FakeNpc extends RefCounted:
 
 class FakeBrain extends RefCounted:
 	var npc := FakeNpc.new()
-	var utility: DotNpcAiUtility
+	var utility: GSNpcAiUtility
 	var thinks := 0
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -85,53 +85,53 @@ func _near(a: float, b: float, eps: float = 0.001) -> bool:
 
 func _test_off_by_default() -> void:
 	_section("off by default")
-	_check(DotNpcAiUtilityConfig.new().enabled == false, "the config ships disabled")
-	var brain := DotNpcAiBrain.new()
+	_check(GSNpcAiUtilityConfig.new().enabled == false, "the config ships disabled")
+	var brain := GSNpcAiBrain.new()
 	_check(brain.utility == null, "a brain has no scorer")
-	_check(brain.use_utility(DotNpcAiUtilityConfig.new()) == null and brain.utility == null, "use_utility with a disabled config stays off")
+	_check(brain.use_utility(GSNpcAiUtilityConfig.new()) == null and brain.utility == null, "use_utility with a disabled config stays off")
 	_check(brain.utility_choose() == &"", "and chooses nothing")
-	var cfg := DotNpcAiUtilityConfig.new()
+	var cfg := GSNpcAiUtilityConfig.new()
 	cfg.enabled = true
-	var b2 := DotNpcAiBrain.new()
+	var b2 := GSNpcAiBrain.new()
 	_check(b2.use_utility(cfg) != null and b2.utility != null, "an enabled config gives a scorer")
 	_done()
 
 
 func _test_curves() -> void:
 	_section("curves")
-	var K := DotNpcAiCurve.Kind
-	var lin := DotNpcAiCurve.make(K.LINEAR, 0.0, 100.0)
+	var K := GSNpcAiCurve.Kind
+	var lin := GSNpcAiCurve.make(K.LINEAR, 0.0, 100.0)
 	_check(_near(lin.eval(0.0), 0.0) and _near(lin.eval(50.0), 0.5) and _near(lin.eval(100.0), 1.0), "linear maps the range to 0..1")
 	_check(_near(lin.eval(-50.0), 0.0) and _near(lin.eval(500.0), 1.0), "linear clamps outside the range")
-	var quad := DotNpcAiCurve.make(K.QUADRATIC, 0.0, 1.0)
+	var quad := GSNpcAiCurve.make(K.QUADRATIC, 0.0, 1.0)
 	_check(_near(quad.eval(0.5), 0.25) and _near(quad.eval(1.0), 1.0), "quadratic squares")
-	var inv := DotNpcAiCurve.make(K.INVERSE, 0.0, 100.0)
+	var inv := GSNpcAiCurve.make(K.INVERSE, 0.0, 100.0)
 	_check(_near(inv.eval(0.0), 1.0) and _near(inv.eval(25.0), 0.75) and _near(inv.eval(100.0), 0.0), "inverse falls as the input rises")
-	var step := DotNpcAiCurve.make(K.STEP, 0.0, 10.0)
+	var step := GSNpcAiCurve.make(K.STEP, 0.0, 10.0)
 	_check(step.eval(4.9) == 0.0 and step.eval(5.0) == 1.0, "step flips at the middle")
-	var logi := DotNpcAiCurve.make(K.LOGISTIC, 0.0, 1.0)
+	var logi := GSNpcAiCurve.make(K.LOGISTIC, 0.0, 1.0)
 	_check(_near(logi.eval(0.0), 0.0) and _near(logi.eval(1.0), 1.0) and _near(logi.eval(0.5), 0.5), "logistic runs 0 to 1 through the middle")
 	_check(logi.eval(0.4) < 0.4 and logi.eval(0.6) > 0.6, "and is steeper than a line in the middle")
 	_check(lin.eval(0.5, 0.25) < lin.eval(0.5), "a shift moves a linear curve along its input")
 	_check(logi.eval(0.5, 0.2) < 0.5 and step.eval(5.0, 0.2) == 0.0, "a shift moves a logistic midpoint and a step threshold")
-	var flat := DotNpcAiCurve.make(K.LINEAR, 5.0, 5.0)
+	var flat := GSNpcAiCurve.make(K.LINEAR, 5.0, 5.0)
 	_check(flat.eval(5.0) == 0.0, "an empty range scores 0, not NaN")
-	var back := DotNpcAiCurve.from_dictionary(logi.to_dictionary())
+	var back := GSNpcAiCurve.from_dictionary(logi.to_dictionary())
 	_check(back.ok and back.value.kind == K.LOGISTIC and _near(back.value.eval(0.3), logi.eval(0.3)), "a curve round-trips through a dictionary")
-	_check(not DotNpcAiCurve.from_dictionary({"kind": "wobbly"}).ok, "an unknown kind is refused")
+	_check(not GSNpcAiCurve.from_dictionary({"kind": "wobbly"}).ok, "an unknown kind is refused")
 	_done()
 
 
 ## Two actions on health and distance, shared by several sections.
-func _build(u: DotNpcAiUtility) -> void:
-	var K := DotNpcAiCurve.Kind
-	u.add_action(&"attack").consider(&"health", DotNpcAiCurve.make(K.LINEAR, 0.0, 1.0)).consider(&"near", DotNpcAiCurve.make(K.INVERSE, 0.0, 30.0))
-	u.add_action(&"flee").consider(&"health", DotNpcAiCurve.make(K.INVERSE, 0.0, 1.0))
-	u.add_action(&"flank").consider(&"near", DotNpcAiCurve.make(K.LINEAR, 0.0, 30.0), 0.5)
+func _build(u: GSNpcAiUtility) -> void:
+	var K := GSNpcAiCurve.Kind
+	u.add_action(&"attack").consider(&"health", GSNpcAiCurve.make(K.LINEAR, 0.0, 1.0)).consider(&"near", GSNpcAiCurve.make(K.INVERSE, 0.0, 30.0))
+	u.add_action(&"flee").consider(&"health", GSNpcAiCurve.make(K.INVERSE, 0.0, 1.0))
+	u.add_action(&"flank").consider(&"near", GSNpcAiCurve.make(K.LINEAR, 0.0, 30.0), 0.5)
 
 
-func _utility(readings: Dictionary, cfg: DotNpcAiUtilityConfig = null) -> DotNpcAiUtility:
-	var u := DotNpcAiUtility.new()
+func _utility(readings: Dictionary, cfg: GSNpcAiUtilityConfig = null) -> GSNpcAiUtility:
+	var u := GSNpcAiUtility.new()
 	if cfg != null:
 		u.config = cfg
 	_build(u)
@@ -148,21 +148,21 @@ func _test_scoring() -> void:
 	r[&"health"] = 0.1
 	_check(u.choose(1.0) == &"flee", "a hurt one flees")
 	_check(u.last_scores[&"attack"] < u.last_scores[&"flee"], "because flee outscored attack", str(u.last_scores))
-	var solo := DotNpcAiUtility.new()
-	solo.add_action(&"x").consider(&"a", DotNpcAiCurve.make(DotNpcAiCurve.Kind.LINEAR)).consider(&"b", DotNpcAiCurve.make(DotNpcAiCurve.Kind.LINEAR))
+	var solo := GSNpcAiUtility.new()
+	solo.add_action(&"x").consider(&"a", GSNpcAiCurve.make(GSNpcAiCurve.Kind.LINEAR)).consider(&"b", GSNpcAiCurve.make(GSNpcAiCurve.Kind.LINEAR))
 	solo.inputs = func(_k: StringName) -> float: return 0.5
 	solo.choose(0.0)
 	_check(solo.last_scores[&"x"] > 0.25, "compensation lifts a two-term product above 0.5 * 0.5", str(solo.last_scores))
 	var calls := [0]
-	var counted := DotNpcAiUtility.new()
-	counted.add_action(&"a").consider(&"k", DotNpcAiCurve.make(DotNpcAiCurve.Kind.LINEAR))
-	counted.add_action(&"b").consider(&"k", DotNpcAiCurve.make(DotNpcAiCurve.Kind.INVERSE))
+	var counted := GSNpcAiUtility.new()
+	counted.add_action(&"a").consider(&"k", GSNpcAiCurve.make(GSNpcAiCurve.Kind.LINEAR))
+	counted.add_action(&"b").consider(&"k", GSNpcAiCurve.make(GSNpcAiCurve.Kind.INVERSE))
 	counted.inputs = func(_k: StringName) -> float:
 		calls[0] += 1
 		return 0.3
 	counted.choose(0.0)
 	_check(calls[0] == 1, "an input two actions share is read once", str(calls[0]))
-	_check(DotNpcAiUtility.new().choose(0.0) == &"", "no actions chooses nothing")
+	_check(GSNpcAiUtility.new().choose(0.0) == &"", "no actions chooses nothing")
 	_done()
 
 
@@ -171,53 +171,53 @@ func _test_personality() -> void:
 	var r := {&"health": 0.6, &"near": 12.0}
 	var neutral := _utility(r)
 	var aggressive := _utility(r)
-	aggressive.personality = DotNpcAiPersonality.aggressive()
+	aggressive.personality = GSNpcAiPersonality.aggressive()
 	aggressive.personality.jitter = 0.0
 	var cautious := _utility(r)
-	cautious.personality = DotNpcAiPersonality.cautious()
+	cautious.personality = GSNpcAiPersonality.cautious()
 	cautious.personality.jitter = 0.0
 	var a := aggressive.choose(0.0)
 	var c := cautious.choose(0.0)
 	_check(a == &"attack" and c != &"attack", "the same readings: aggressive attacks, cautious does not", "%s %s" % [a, c])
 	r[&"health"] = 0.45
 	var shifted_a := _utility(r)
-	shifted_a.personality = DotNpcAiPersonality.aggressive()
+	shifted_a.personality = GSNpcAiPersonality.aggressive()
 	shifted_a.personality.jitter = 0.0
 	var shifted_c := _utility(r)
-	shifted_c.personality = DotNpcAiPersonality.cautious()
+	shifted_c.personality = GSNpcAiPersonality.cautious()
 	shifted_c.personality.jitter = 0.0
 	shifted_a.choose(0.0)
 	shifted_c.choose(0.0)
 	_check(shifted_a.last_scores[&"attack"] > shifted_c.last_scores[&"attack"], "a brave curve shift raises attack's score over a cautious one's")
 	var f := _utility({&"health": 0.9, &"near": 28.0})
-	f.personality = DotNpcAiPersonality.flanker()
+	f.personality = GSNpcAiPersonality.flanker()
 	f.personality.jitter = 0.0
 	_check(f.choose(0.0) == &"flank", "a flanker flanks at range")
 	neutral.choose(0.0)
 	_check(neutral.last_scores.size() == 3, "scores are kept for describe")
-	var p1 := DotNpcAiPersonality.aggressive()
+	var p1 := GSNpcAiPersonality.aggressive()
 	_check(p1.wobble(7, &"attack") == p1.wobble(7, &"attack"), "the wobble is fixed for a seed and action")
 	_check(p1.wobble(7, &"attack") != p1.wobble(8, &"attack"), "and differs between seeds")
 	var w := true
 	for s in 50:
 		w = w and absf(p1.wobble(s, &"attack") - 1.0) <= p1.jitter + 0.0001
 	_check(w, "and stays within +/- jitter")
-	var made := DotNpcAiPersonality.from_dictionary({"actions": {"attack": 2.0}, "shifts": {"health": -0.1}, "jitter": 0.05}, &"brute")
+	var made := GSNpcAiPersonality.from_dictionary({"actions": {"attack": 2.0}, "shifts": {"health": -0.1}, "jitter": 0.05}, &"brute")
 	_check(made.ok and made.value.weight_of(&"attack") == 2.0 and made.value.shift_of(&"health") == -0.1, "a personality loads from a dictionary")
-	_check(not DotNpcAiPersonality.from_dictionary({"jitter": 3.0}).ok, "and a jitter above 1 is refused")
+	_check(not GSNpcAiPersonality.from_dictionary({"jitter": 3.0}).ok, "and a jitter above 1 is refused")
 	_done()
 
 
 func _test_hysteresis() -> void:
 	_section("hysteresis")
-	var K := DotNpcAiCurve.Kind
+	var K := GSNpcAiCurve.Kind
 	var r := {&"a": 0.50, &"b": 0.48}
-	var cfg := DotNpcAiUtilityConfig.new()
+	var cfg := GSNpcAiUtilityConfig.new()
 	cfg.min_hold_s = 0.0
-	var u := DotNpcAiUtility.new()
+	var u := GSNpcAiUtility.new()
 	u.config = cfg
-	u.add_action(&"A").consider(&"a", DotNpcAiCurve.make(K.LINEAR))
-	u.add_action(&"B").consider(&"b", DotNpcAiCurve.make(K.LINEAR))
+	u.add_action(&"A").consider(&"a", GSNpcAiCurve.make(K.LINEAR))
+	u.add_action(&"B").consider(&"b", GSNpcAiCurve.make(K.LINEAR))
 	u.inputs = func(k: StringName) -> float: return r[k]
 	u.choose(0.0)
 	var flips := 0
@@ -233,13 +233,13 @@ func _test_hysteresis() -> void:
 	r[&"a"] = 0.1
 	r[&"b"] = 0.9
 	_check(u.choose(200.0) == &"B", "a clear win still switches")
-	var plain_cfg := DotNpcAiUtilityConfig.new()
+	var plain_cfg := GSNpcAiUtilityConfig.new()
 	plain_cfg.hysteresis_bonus = 0.0
 	plain_cfg.min_hold_s = 0.0
-	var plain := DotNpcAiUtility.new()
+	var plain := GSNpcAiUtility.new()
 	plain.config = plain_cfg
-	plain.add_action(&"A").consider(&"a", DotNpcAiCurve.make(K.LINEAR))
-	plain.add_action(&"B").consider(&"b", DotNpcAiCurve.make(K.LINEAR))
+	plain.add_action(&"A").consider(&"a", GSNpcAiCurve.make(K.LINEAR))
+	plain.add_action(&"B").consider(&"b", GSNpcAiCurve.make(K.LINEAR))
 	plain.inputs = func(k: StringName) -> float: return r[k]
 	var pf := 0
 	var pl := &""
@@ -251,20 +251,20 @@ func _test_hysteresis() -> void:
 			pf += 1
 			pl = n
 	_check(pf > 50, "the same wobble flaps every tick without it", str(pf))
-	var tie := DotNpcAiUtility.new()
+	var tie := GSNpcAiUtility.new()
 	tie.config.min_hold_s = 0.0
-	tie.add_action(&"first").consider(&"k", DotNpcAiCurve.make(K.LINEAR))
-	tie.add_action(&"second").consider(&"k", DotNpcAiCurve.make(K.LINEAR))
+	tie.add_action(&"first").consider(&"k", GSNpcAiCurve.make(K.LINEAR))
+	tie.add_action(&"second").consider(&"k", GSNpcAiCurve.make(K.LINEAR))
 	tie.inputs = func(_k: StringName) -> float: return 0.5
 	_check(tie.choose(0.0) == &"first" and tie.choose(1.0) == &"first", "an exact tie goes to the earlier action, every time")
-	var hold_cfg := DotNpcAiUtilityConfig.new()
+	var hold_cfg := GSNpcAiUtilityConfig.new()
 	hold_cfg.min_hold_s = 2.0
 	hold_cfg.hysteresis_bonus = 0.0
-	var h := DotNpcAiUtility.new()
+	var h := GSNpcAiUtility.new()
 	h.config = hold_cfg
 	var hr := {&"a": 0.9, &"b": 0.1}
-	h.add_action(&"A").consider(&"a", DotNpcAiCurve.make(K.LINEAR))
-	h.add_action(&"B").consider(&"b", DotNpcAiCurve.make(K.LINEAR))
+	h.add_action(&"A").consider(&"a", GSNpcAiCurve.make(K.LINEAR))
+	h.add_action(&"B").consider(&"b", GSNpcAiCurve.make(K.LINEAR))
 	h.inputs = func(k: StringName) -> float: return hr[k]
 	h.choose(0.0)
 	hr[&"a"] = 0.2
@@ -285,7 +285,7 @@ func _test_hysteresis() -> void:
 
 func _test_assignment() -> void:
 	_section("assignment")
-	var cfg := DotNpcAiUtilityConfig.new()
+	var cfg := GSNpcAiUtilityConfig.new()
 	_check(cfg.personality_for(5) == null, "none assigns nothing")
 	cfg.assignment = "random"
 	var seen := {}
@@ -300,12 +300,12 @@ func _test_assignment() -> void:
 	cfg.role_map = {"sniper": "cautious", "rusher": "aggressive"}
 	_check(cfg.personality_for(1, &"sniper").id == &"cautious" and cfg.personality_for(1, &"rusher").id == &"aggressive", "role picks by the map")
 	_check(cfg.personality_for(1, &"medic") == null, "an unmapped role gets none")
-	var loaded := DotNpcAiUtilityConfig.new()
+	var loaded := GSNpcAiUtilityConfig.new()
 	var applied := loaded.apply_dictionary({"enabled": true, "assignment": "role", "hysteresis_bonus": 0.4,
 		"role_map": {"boss": "brute"}, "personalities": {"brute": {"actions": {"attack": 2.0}, "jitter": 0.0}}})
 	_check(applied.size() == 5 and loaded.enabled and is_equal_approx(loaded.hysteresis_bonus, 0.4), "the config loads from a dictionary (JSON or YAML)", str(applied))
 	_check(loaded.validate().ok and loaded.personality_for(1, &"boss").weight_of(&"attack") == 2.0, "with a custom personality")
-	var bad := DotNpcAiUtilityConfig.new()
+	var bad := GSNpcAiUtilityConfig.new()
 	bad.assignment = "dice"
 	_check(not bad.validate().ok, "an unknown assignment is refused")
 	_done()
@@ -313,8 +313,8 @@ func _test_assignment() -> void:
 
 func _test_tier_cost() -> void:
 	_section("tier cost")
-	var s := DotNpcAiScheduler.new()
-	var sc := DotNpcAiSchedulerConfig.new()
+	var s := GSNpcAiScheduler.new()
+	var sc := GSNpcAiSchedulerConfig.new()
 	sc.enabled = true
 	sc.budget_ms = 1000.0
 	s.apply_config(sc)
@@ -322,13 +322,13 @@ func _test_tier_cost() -> void:
 	s.clock = func() -> int: return 0
 	s.auto_advance = false
 	add_child(s)
-	var ucfg := DotNpcAiUtilityConfig.new()
+	var ucfg := GSNpcAiUtilityConfig.new()
 	var brains: Array = []
 	for i in 30:
 		var b := FakeBrain.new()
 		b.npc.pos = Vector3([10.0, 40.0, 90.0][i % 3], 0, 0)
 		b.npc.seed = i
-		b.utility = DotNpcAiUtility.new()
+		b.utility = GSNpcAiUtility.new()
 		b.utility.config = ucfg
 		_build(b.utility)
 		b.utility.inputs = func(_k: StringName) -> float: return 0.5
@@ -355,9 +355,9 @@ func _test_tier_cost() -> void:
 	_check(hits == by_tier[0] + by_tier[1] + by_tier[2], "a second ask in the same think is a cache hit, not a score")
 	var tier0: FakeBrain = brains[0]
 	_check(tier0.utility.considerations_scored == tier0.utility.evaluations * 4, "four considerations scored per evaluation, none per skipped tick", str(tier0.utility.considerations_scored))
-	var cached_cfg := DotNpcAiUtilityConfig.new()
+	var cached_cfg := GSNpcAiUtilityConfig.new()
 	cached_cfg.cache_s = 0.5
-	var cu := DotNpcAiUtility.new()
+	var cu := GSNpcAiUtility.new()
 	cu.config = cached_cfg
 	_build(cu)
 	cu.inputs = func(_k: StringName) -> float: return 0.5

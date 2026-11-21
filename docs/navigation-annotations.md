@@ -12,13 +12,13 @@ Everything here is measured from two things every map has once it is loaded: the
 
 | Part | Owner |
 | --- | --- |
-| Baking the mesh from the level's colliders | GameSpice Bot's `DotBotNav` (on a worker thread where there are threads), or anything else that makes a `NavigationMesh` |
-| Annotating it | `DotNpcAiNavAnnotator` here, a `DotJob` |
-| Holding, saving and querying the result | `DotNpcAiNavAnnotations` here, data only |
-| Seeing it | `DotNpcAiNavDebug` here, and `tools/annotate_map.gd` |
-| Using it | the game: it hands the links to its planner (`DotBotNav.add_ride`, GameSpice NPC's `add_link`) and the spots to its choose step (`DotBotHiding`, `DotNpcAiTactics`) |
+| Baking the mesh from the level's colliders | GameSpice Bot's `GSBotNav` (on a worker thread where there are threads), or anything else that makes a `NavigationMesh` |
+| Annotating it | `GSNpcAiNavAnnotator` here, a `GSJob` |
+| Holding, saving and querying the result | `GSNpcAiNavAnnotations` here, data only |
+| Seeing it | `GSNpcAiNavDebug` here, and `tools/annotate_map.gd` |
+| Using it | the game: it hands the links to its planner (`GSBotNav.add_ride`, GameSpice NPC's `add_link`) and the spots to its choose step (`GSBotHiding`, `GSNpcAiTactics`) |
 
-The annotator takes engine types only (a `NavigationMesh` and a `World3D`) and names no navigation class of any addon. Points come out as `Vector3`s in the map's space, so GameSpice Bot's mesh, GameSpice NPC's graph and a game's own pathing read the same annotations, and GameSpice NPC AI stays liftable. Spots are dictionaries with GameSpice Bot's hiding fields (`at`, `exposure`, `seen_by`), so `hiding_spots()` goes straight into `DotBotHiding.choose`.
+The annotator takes engine types only (a `NavigationMesh` and a `World3D`) and names no navigation class of any addon. Points come out as `Vector3`s in the map's space, so GameSpice Bot's mesh, GameSpice NPC's graph and a game's own pathing read the same annotations, and GameSpice NPC AI stays liftable. Spots are dictionaries with GameSpice Bot's hiding fields (`at`, `exposure`, `seen_by`), so `hiding_spots()` goes straight into `GSBotHiding.choose`.
 
 ## What it finds, and how
 
@@ -55,7 +55,7 @@ The annotator takes engine types only (a `NavigationMesh` and a `World3D`) and n
 
 ## The frame budget, and the browser
 
-A physics query is main-thread only, and a browser without threads has nothing else. So the annotator is a `DotJob` stepped in slices of `slice` items (24), and a `DotScheduler` runs it inside its frame budget; every phase is sliced, including the two that were not at first (thinning the wall samples, and the sky test per island, each 30 to 80 ms in one go on a large map). A count of items is no budget, because an item on a dense map costs ten times one on a sparse map: 24 outline samples were 40 ms on a bhop map of 7000 polygons, and the one step that kept islands (area, links, reach, the sampling tables) was 80 ms. So `slice_ms` (4) also ends a step, after the item it is on, and the island keeping, the cache-key hash and the closing count are stages walked a slice at a time. A step can still overrun by one item (a sample's rays are up to about 5 ms on that map). None of it changes the result or the key, and the suite times every step on a large generated level, with `slice_ms` against an unbudgeted run for the same answer. `run_to_completion()` is for tools and tests. It is deterministic: the same mesh, colliders, settings and `random_seed` give the same annotations, sliced or in one go (the suite checks both).
+A physics query is main-thread only, and a browser without threads has nothing else. So the annotator is a `GSJob` stepped in slices of `slice` items (24), and a `GSScheduler` runs it inside its frame budget; every phase is sliced, including the two that were not at first (thinning the wall samples, and the sky test per island, each 30 to 80 ms in one go on a large map). A count of items is no budget, because an item on a dense map costs ten times one on a sparse map: 24 outline samples were 40 ms on a bhop map of 7000 polygons, and the one step that kept islands (area, links, reach, the sampling tables) was 80 ms. So `slice_ms` (4) also ends a step, after the item it is on, and the island keeping, the cache-key hash and the closing count are stages walked a slice at a time. A step can still overrun by one item (a sample's rays are up to about 5 ms on that map). None of it changes the result or the key, and the suite times every step on a large generated level, with `slice_ms` against an unbudgeted run for the same answer. `run_to_completion()` is for tools and tests. It is deterministic: the same mesh, colliders, settings and `random_seed` give the same annotations, sliced or in one go (the suite checks both).
 
 ## Measured
 
@@ -71,7 +71,7 @@ At 24 items a slice the largest map's slowest slice is 8.4 ms (the outline, wher
 
 ## Looked at
 
-No assertion reaches a link that lands on the wrong floor or a hiding spot in the middle of a room. `DotNpcAiNavDebug` draws links as bent arrows coloured by kind (drop red, jump up green, gap yellow, ladder purple, teleport pink, ride cyan), hiding spots as tall blue markers, other spots as small light ones, chokepoints as orange bars and the kept mesh in translucent green. `tools/annotate_map.gd --out PREFIX` under a renderer photographs it from above with the level hidden (a map is usually roofed), close up on the busiest 16 m, and from two corners:
+No assertion reaches a link that lands on the wrong floor or a hiding spot in the middle of a room. `GSNpcAiNavDebug` draws links as bent arrows coloured by kind (drop red, jump up green, gap yellow, ladder purple, teleport pink, ride cyan), hiding spots as tall blue markers, other spots as small light ones, chokepoints as orange bars and the kept mesh in translucent green. `tools/annotate_map.gd --out PREFIX` under a renderer photographs it from above with the level hidden (a map is usually roofed), close up on the busiest 16 m, and from two corners:
 
 ```bash
 xvfb-run -a godot --path . --resolution 1600x900 --script res://tools/annotate_map.gd -- --toy --out /tmp/toy
@@ -106,7 +106,7 @@ What looking found, that every count had passed: floor-level gap links across ev
 
 | Game | Next step |
 | --- | --- |
-| game-fatal-contact | After its `DotBotNav` bake, run the annotator on `nav.mesh` with the map's spawns as seeds and its pits as declared teleports, cache by key, and hand drops, jump ups and gaps to `add_ride`; its ride edges go in as declared links |
+| game-fatal-contact | After its `GSBotNav` bake, run the annotator on `nav.mesh` with the map's spawns as seeds and its pits as declared teleports, cache by key, and hand drops, jump ups and gaps to `add_ride`; its ride edges go in as declared links |
 | game-hide-n-seek | Replace HsBots' random-point survey with `hiding_spots()` for hiders, and use `cover_from` for a hider that has been seen; seekers walk the chokepoints first |
 | mg-prop-hunt | Override `_hide_score` to prefer spots beside props (enclosure low, a prop within a metre), and declare nothing |
 | game-zombie-zone | Hold chokepoints for the defenders; zombies take drops (never jump ups) so a tower is defensible |

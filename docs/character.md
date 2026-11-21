@@ -4,7 +4,7 @@
 
 A behaviour tree decides *what* to do. Two NPCs running the same tree are the same NPC: they notice at the same instant, shoot with the same accuracy, and pick the same branch every time. That is not a tuning problem, it is a missing layer, and every game that shipped good bots has it.
 
-`DotNpcAiCharacter` is the characteristics table of the late-1990s arena shooters' bots, read out of an open-sourced original. It is cut down to what is not specific to that engine: the chat characteristics belong to a game, the weapon-specific aim to dot-combat, the item weights to the tree, and grapple and weapon-jumping to a movement model this family does not have.
+`GSNpcAiCharacter` is the characteristics table of the late-1990s arena shooters' bots, read out of an open-sourced original. It is cut down to what is not specific to that engine: the chat characteristics belong to a game, the weapon-specific aim to dot-combat, the item weights to the tree, and grapple and weapon-jumping to a movement model this family does not have.
 
 Three of the fields do work rather than describe intent, and they are the reason it is a class:
 
@@ -16,11 +16,11 @@ Three of the fields do work rather than describe intent, and they are the reason
 
 ## A character from recorded people
 
-`DotNpcAiCharacter.from_percentiles(stats, tier)` builds a preset-based character whose reaction time, aim accuracy and aim skill come from the percentiles of recorded players (`reaction`, `aim_error`, `tracking`, each `{p20, p50, p80}`): easy takes the slow end (p80), normal the median, hard the fast end (p20). It takes a Dictionary or any object with `percentiles()` (GameSpice Bot's `DotBotAimStats`), duck typed so neither addon names the other. Values are clamped to nightmare's floors, a missing or NaN metric keeps the preset's number, and personality is never touched. Suite: `_test_character_from_percentiles`.
+`GSNpcAiCharacter.from_percentiles(stats, tier)` builds a preset-based character whose reaction time, aim accuracy and aim skill come from the percentiles of recorded players (`reaction`, `aim_error`, `tracking`, each `{p20, p50, p80}`): easy takes the slow end (p80), normal the median, hard the fast end (p20). It takes a Dictionary or any object with `percentiles()` (GameSpice Bot's `GSBotAimStats`), duck typed so neither addon names the other. Values are clamped to nightmare's floors, a missing or NaN metric keeps the preset's number, and personality is never touched. Suite: `_test_character_from_percentiles`.
 
 ## The reaction clock is `target_since`, not `engaged_at`
 
-`DotNpcAiBrain.has_reacted()` measures from `DotNpcInstance.target_since`, which dot-npc sets when `target_id` **changes** and not while it is held, including re-perceiving the *same* target after a gap (not a new commitment; restarting the clock would mean an NPC never finishes reacting to somebody who keeps stepping behind a pillar). `engaged_at` is refreshed on every pass the target is perceived, because it answers "is this NPC still busy"; measuring from it kept the gate shut for ever. The story is in [history.md](history.md#has_reacted-was-false-for-ever).
+`GSNpcAiBrain.has_reacted()` measures from `GSNpcInstance.target_since`, which dot-npc sets when `target_id` **changes** and not while it is held, including re-perceiving the *same* target after a gap (not a new commitment; restarting the clock would mean an NPC never finishes reacting to somebody who keeps stepping behind a pillar). `engaged_at` is refreshed on every pass the target is perceived, because it answers "is this NPC still busy"; measuring from it kept the gate shut for ever. The story is in [history.md](history.md#has_reacted-was-false-for-ever).
 
 ## The randomness is reproducible, and that was not free
 
@@ -28,24 +28,24 @@ Everything that decides by chance here (aim error, `RandomChance`, the weighted 
 
 The mixer is kept in the positive half of a signed 64-bit int at every step. GDScript's `>>` sign-extends, so one that is allowed to go negative shifts ones in from the top and stops being uniform: GameSpice Combat's half-moon bug in a different costume. The suite checks all four quadrants rather than the magnitude, because a magnitude check passes for a half-moon.
 
-**Give each NPC its own seed.** A preset is one resource; twenty NPCs sharing it share a seed, so every one takes the same shot with the same error at the same moment. It reads as a firing squad. `with_seed()` is the call, and `DotNpcAiBrain` makes it for a brain that did not, from `npc.seed`. That is GameSpice NPC's per-spawn seed and never the engine object id, which moves whenever anything else is allocated first, so a replay would disagree with its recording. A brain that seeds itself does the same: `with_seed(npc.seed)`, and `deterministic_unit(npc.seed, salt)` for its own rolls.
+**Give each NPC its own seed.** A preset is one resource; twenty NPCs sharing it share a seed, so every one takes the same shot with the same error at the same moment. It reads as a firing squad. `with_seed()` is the call, and `GSNpcAiBrain` makes it for a brain that did not, from `npc.seed`. That is GameSpice NPC's per-spawn seed and never the engine object id, which moves whenever anything else is allocated first, so a replay would disagree with its recording. A brain that seeds itself does the same: `with_seed(npc.seed)`, and `deterministic_unit(npc.seed, salt)` for its own rolls.
 
 ## The server's skill, which is not a difficulty setting
 
 The ask was "let the server make NPCs smarter or quicker to react", as cvars. The trap is the obvious implementation: a global difficulty that **replaces** each NPC's numbers makes every monster the same monster at a different speed, and the characteristics table exists so that a brute and a stalker are wrong to fight the same way.
 
-So `DotNpcAiSkill` **moves** each character toward `easy()` or `nightmare()` by a fraction (`npc_skill`, -1..1 or a level name), multiplies reaction times separately (`npc_reaction_scale`, because "too smart" and "too quick" are different complaints), and floors them (`npc_reaction_min`, 0.05 s, for the reason nightmare keeps one above zero).
+So `GSNpcAiSkill` **moves** each character toward `easy()` or `nightmare()` by a fraction (`npc_skill`, -1..1 or a level name), multiplies reaction times separately (`npc_reaction_scale`, because "too smart" and "too quick" are different complaints), and floors them (`npc_reaction_min`, 0.05 s, for the reason nightmare keeps one above zero).
 
 - **Ability moves; personality does not.** Reaction, alertness, memory, aim, turning and `tactics` are how good an NPC is. Aggression, self-preservation and vengefulness are who it is, and a coward that turned brave on a hard server would be a different game.
 - **Only in the direction asked for.** A plain lerp toward nightmare makes a kind authored *better* than nightmare at something worse at it as skill goes up ("hard mode made the stalkers slower"). The suite pins it.
 - **Applied to what was authored, not to the last result.** The brain keeps `base_character` and re-applies on every `revision` change, or turning skill up and back down would not come back.
-- **On the director as node metadata, not in `DotRegistry`.** The registry is per process, and two servers in one process (which every game's suite runs) must not share a difficulty. A brain that spawned before the attach finds it on its next tick.
+- **On the director as node metadata, not in `GSRegistry`.** The registry is per process, and two servers in one process (which every game's suite runs) must not share a difficulty. A brain that spawned before the attach finds it on its next tick.
 
 `bind_cvars` takes a module's `add_cvar` as a Callable and duck-types the cvar it returns, because GameSpice Server is not a dependency. It **reads the value back after registering**: a value set from argv before the module loaded is already in the cvar, and a binding that only listened for changes would leave the server saying `hard` while its NPCs are normal. The suite checks it against a fake cvar that starts pre-set.
 
 ## Alertness and memory_time reach the senses
 
-The brain writes `DotNpcInstance.sight_scale` from the character's `alertness` on every change, so `npc_skill` reaches how far an NPC sees and not only how fast it reacts. `memory_time` sets how long the brain's memory holds a lost enemy. Both were once declared, documented, carried by every preset and read by nothing; a character field that nothing reads is the thing to check for when adding one.
+The brain writes `GSNpcInstance.sight_scale` from the character's `alertness` on every change, so `npc_skill` reaches how far an NPC sees and not only how fast it reacts. `memory_time` sets how long the brain's memory holds a lost enemy. Both were once declared, documented, carried by every preset and read by nothing; a character field that nothing reads is the thing to check for when adding one.
 
 ## Memory, search, and being hurt
 

@@ -1,6 +1,6 @@
 extends "dot_npc_ai_brain_motion.gd"
 
-## Memory, search, squad roles, cover and danger of [DotNpcAiBrain]: what it does about what it knows. Not a public class.
+## Memory, search, squad roles, cover and danger of [GSNpcAiBrain]: what it does about what it knows. Not a public class.
 
 
 ## How long this NPC keeps believing it knows where somebody is. From its character.
@@ -35,7 +35,7 @@ func forget_target_position() -> void:
 	_end_search()
 
 
-func _search_entry() -> DotNpcAiMemory.Entry:
+func _search_entry() -> GSNpcAiMemory.Entry:
 	if memory == null or context == null:
 		return null
 
@@ -58,17 +58,17 @@ func _end_search() -> void:
 
 
 ## Goes to where a lost enemy probably is, then looks round. A ready-made leaf: RUNNING while walking or looking, SUCCESS once it found nothing (that enemy is then forgotten), FAILURE with nothing to look for. Between the fight and the idle branch of a reactive selector, a target perceived mid-search takes over the same tick.
-## "Probably" by [method tactics]: [DotNpcAiMemory] keeps the velocity the enemy left with; tactics 0 walks to the spot they were lost, tactics 1 to where they were heading (turning two corners beats the first).
+## "Probably" by [method tactics]: [GSNpcAiMemory] keeps the velocity the enemy left with; tactics 0 walks to the spot they were lost, tactics 1 to where they were heading (turning two corners beats the first).
 ## The look-round sweeps either side of the arrival heading, longer the better its memory.
-func search(ctx: DotNpcAiContext, speed: float, spacing: float = 1.6) -> DotNpcAiNode.Status:
+func search(ctx: GSNpcAiContext, speed: float, spacing: float = 1.6) -> GSNpcAiNode.Status:
 	if npc == null or not npc.is_alive() or blackboard == null or memory == null:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var entry := _search_entry()
 
 	if entry == null:
 		_end_search()
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	if blackboard.get_name(KEY_SEARCH_ID, ctx.now, &"") != entry.id:
 		# A different thing to look for than last tick: start again.
@@ -82,7 +82,7 @@ func search(ctx: DotNpcAiContext, speed: float, spacing: float = 1.6) -> DotNpcA
 
 		if flat.length() > search_arrive_distance:
 			steer_with_spacing(goal, speed, ctx.delta, spacing)
-			return DotNpcAiNode.Status.RUNNING
+			return GSNpcAiNode.Status.RUNNING
 
 		var facing := npc.facing()
 		blackboard.put(KEY_SEARCH_ARRIVED, ctx.now, ctx.now)
@@ -94,7 +94,7 @@ func search(ctx: DotNpcAiContext, speed: float, spacing: float = 1.6) -> DotNpcA
 		memory.forget(entry.id)
 		_end_search()
 		halt()
-		return DotNpcAiNode.Status.SUCCESS
+		return GSNpcAiNode.Status.SUCCESS
 
 	halt()
 
@@ -102,9 +102,9 @@ func search(ctx: DotNpcAiContext, speed: float, spacing: float = 1.6) -> DotNpcA
 	# finds somebody, and the cone points where the NPC faces.
 	var heading := blackboard.get_float(KEY_SEARCH_HEADING, ctx.now, 0.0)
 	var glance_yaw := character.glance_offset(ctx.now) if character != null else 0.0
-	face(DotNpcAiSteering.angle_to_direction(heading + sin(looked * 2.2) * 1.2 + glance_yaw))
+	face(GSNpcAiSteering.angle_to_direction(heading + sin(looked * 2.2) * 1.2 + glance_yaw))
 
-	return DotNpcAiNode.Status.RUNNING
+	return GSNpcAiNode.Status.RUNNING
 
 
 ## How long a search looks round once it arrives, from the character's memory.
@@ -205,7 +205,7 @@ func find_cover(threat: Vector3, max_distance: float = 15.0) -> Vector3:
 	var here := npc.position()
 
 	var scorer := func(spot: Vector3, index: int) -> float:
-		if (data.cover_flags_of(index) & DotNpcNavData.Cover.IN_COVER) == 0:
+		if (data.cover_flags_of(index) & GSNpcNavData.Cover.IN_COVER) == 0:
 			return -INF
 
 		var away := spot.distance_to(here)
@@ -232,7 +232,7 @@ func find_cover(threat: Vector3, max_distance: float = 15.0) -> Vector3:
 		# dot-npc's own weighting: eight metres of walking per unit of facing.
 		return covered * 8.0 - away
 
-	var best := DotNpcAiTactics.best_of(data.cover_positions, scorer)
+	var best := GSNpcAiTactics.best_of(data.cover_positions, scorer)
 
 	if best < 0 or is_inf(float(scorer.call(data.cover_positions[best], best))):
 		return Vector3.INF
@@ -247,20 +247,20 @@ func find_cover(threat: Vector3, max_distance: float = 15.0) -> Vector3:
 ## Goes to cover from [param threat] — the target, or the freshest thing remembered, when
 ## omitted. SUCCESS once there, RUNNING on the way, FAILURE with no cover to go to.
 func take_cover(
-	ctx: DotNpcAiContext, speed: float, threat: Vector3 = Vector3.INF
-) -> DotNpcAiNode.Status:
+	ctx: GSNpcAiContext, speed: float, threat: Vector3 = Vector3.INF
+) -> GSNpcAiNode.Status:
 	if npc == null or not npc.is_alive():
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var from := threat if threat != Vector3.INF else last_known_position()
 
 	if from == Vector3.INF:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var spot := find_cover(from)
 
 	if spot == Vector3.INF:
-		return DotNpcAiNode.Status.FAILURE
+		return GSNpcAiNode.Status.FAILURE
 
 	var flat := spot - npc.position()
 	flat.y = 0.0
@@ -268,20 +268,20 @@ func take_cover(
 	if flat.length() <= 0.75:
 		halt()
 		face(from - npc.position())
-		return DotNpcAiNode.Status.SUCCESS
+		return GSNpcAiNode.Status.SUCCESS
 
 	steer_toward(spot, speed, ctx.delta)
-	return DotNpcAiNode.Status.RUNNING
+	return GSNpcAiNode.Status.RUNNING
 
 
-func _nav_data() -> DotNpcNavData:
+func _nav_data() -> GSNpcNavData:
 	if director == null:
 		return null
 
 	var graph: Variant = director.get(&"nav")
 
-	if graph is DotNpcNavGraph:
-		return (graph as DotNpcNavGraph).data
+	if graph is GSNpcNavGraph:
+		return (graph as GSNpcNavGraph).data
 
 	return null
 

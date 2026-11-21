@@ -11,7 +11,7 @@ const SECTIONS := 48
 
 
 func _ready() -> void:
-	DotLog.set_level(DotLog.Level.ERROR)
+	GSLog.set_level(GSLog.Level.ERROR)
 	_run.call_deferred()
 
 
@@ -99,7 +99,7 @@ func _run() -> void:
 func _test_blackboard() -> void:
 	_section("blackboard")
 
-	var board := DotNpcAiBlackboard.new()
+	var board := GSNpcAiBlackboard.new()
 	board.put(&"target", Vector3(1, 2, 3), 0.0)
 
 	_check(board.get_vector(&"target", 0.0) == Vector3(1, 2, 3), "a value is remembered")
@@ -121,7 +121,7 @@ func _test_blackboard() -> void:
 		"has() compared against null would lie about it"
 	)
 
-	var squad := DotNpcAiBlackboard.new()
+	var squad := GSNpcAiBlackboard.new()
 	squad.put(&"rally", Vector3(9, 0, 9), 0.0)
 	board.parent = squad
 
@@ -164,28 +164,28 @@ func _test_leaves() -> void:
 
 	var ctx := _context()
 
-	var yes := DotNpcAiLeaf.Condition.new(&"yes", func(_c: DotNpcAiContext) -> bool: return true)
-	_check(yes.tick(ctx) == DotNpcAiNode.Status.SUCCESS, "a true condition succeeds")
+	var yes := GSNpcAiLeaf.Condition.new(&"yes", func(_c: GSNpcAiContext) -> bool: return true)
+	_check(yes.tick(ctx) == GSNpcAiNode.Status.SUCCESS, "a true condition succeeds")
 
-	var no := DotNpcAiLeaf.Condition.new(&"no", func(_c: DotNpcAiContext) -> bool: return false)
-	_check(no.tick(ctx) == DotNpcAiNode.Status.FAILURE, "and a false one fails")
+	var no := GSNpcAiLeaf.Condition.new(&"no", func(_c: GSNpcAiContext) -> bool: return false)
+	_check(no.tick(ctx) == GSNpcAiNode.Status.FAILURE, "and a false one fails")
 
-	var empty := DotNpcAiLeaf.Condition.new(&"empty")
+	var empty := GSNpcAiLeaf.Condition.new(&"empty")
 	_check(
-		empty.tick(ctx) == DotNpcAiNode.Status.FAILURE,
+		empty.tick(ctx) == GSNpcAiNode.Status.FAILURE,
 		"a condition with no test FAILS rather than passing",
 		"a tree whose guards silently pass runs every branch at once"
 	)
 
-	var bool_action := DotNpcAiLeaf.Action.new(&"b", func(_c: DotNpcAiContext) -> bool: return true)
+	var bool_action := GSNpcAiLeaf.Action.new(&"b", func(_c: GSNpcAiContext) -> bool: return true)
 	_check(
-		bool_action.tick(ctx) == DotNpcAiNode.Status.SUCCESS,
+		bool_action.tick(ctx) == GSNpcAiNode.Status.SUCCESS,
 		"an action may return a bool"
 	)
 
-	var void_action := DotNpcAiLeaf.Action.new(&"v", func(_c: DotNpcAiContext) -> void: pass)
+	var void_action := GSNpcAiLeaf.Action.new(&"v", func(_c: GSNpcAiContext) -> void: pass)
 	_check(
-		void_action.tick(ctx) == DotNpcAiNode.Status.SUCCESS,
+		void_action.tick(ctx) == GSNpcAiNode.Status.SUCCESS,
 		"and one that returns nothing succeeds",
 		"the commonest thing to write; failing by default would be wrong for all of it"
 	)
@@ -198,7 +198,7 @@ func _test_sequence_resume() -> void:
 	var ctx := _context()
 	var log: Array = []
 
-	var sequence := DotNpcAiSequence.new(&"seq", [
+	var sequence := GSNpcAiSequence.new(&"seq", [
 		_counting(0, log, "open"),
 		_counting(3, log, "walk"),
 		_counting(0, log, "close"),
@@ -207,7 +207,7 @@ func _test_sequence_resume() -> void:
 	for i in 3:
 		ctx.advance(0.1)
 		_check(
-			sequence.tick(ctx) == DotNpcAiNode.Status.RUNNING,
+			sequence.tick(ctx) == GSNpcAiNode.Status.RUNNING,
 			"tick %d is still running" % (i + 1)
 		)
 
@@ -220,15 +220,15 @@ func _test_sequence_resume() -> void:
 	_check(log.count("close") == 0, "and the one after it has not started")
 
 	ctx.advance(0.1)
-	_check(sequence.tick(ctx) == DotNpcAiNode.Status.SUCCESS, "and it finishes")
+	_check(sequence.tick(ctx) == GSNpcAiNode.Status.SUCCESS, "and it finishes")
 	_check(log.count("close") == 1, "having run the last child")
 
-	var failing := DotNpcAiSequence.new(&"seq2", [
-		DotNpcAiLeaf.Condition.new(&"no", func(_c: DotNpcAiContext) -> bool: return false),
+	var failing := GSNpcAiSequence.new(&"seq2", [
+		GSNpcAiLeaf.Condition.new(&"no", func(_c: GSNpcAiContext) -> bool: return false),
 		_counting(0, log, "unreachable"),
 	])
 
-	_check(failing.tick(ctx) == DotNpcAiNode.Status.FAILURE, "a failed child fails the sequence")
+	_check(failing.tick(ctx) == GSNpcAiNode.Status.FAILURE, "a failed child fails the sequence")
 	_check(log.count("unreachable") == 0, "and nothing after it runs")
 	_done()
 
@@ -241,15 +241,15 @@ func _test_reactive_sequence() -> void:
 	var holding := {"on": true}
 	var aborted: Array = []
 
-	var guard := DotNpcAiLeaf.Condition.new(&"guard", func(_c: DotNpcAiContext) -> bool:
+	var guard := GSNpcAiLeaf.Condition.new(&"guard", func(_c: GSNpcAiContext) -> bool:
 		return bool(holding["on"]))
 
 	# An action that never finishes: "walk at the target" is one, and so is almost
 	# every behaviour worth guarding.
 	var forever := _counting(10000, log, "chase")
-	forever.on_abort = func(_c: DotNpcAiContext) -> void: aborted.append("chase")
+	forever.on_abort = func(_c: GSNpcAiContext) -> void: aborted.append("chase")
 
-	var plain := DotNpcAiSequence.new(&"plain", [guard, forever])
+	var plain := GSNpcAiSequence.new(&"plain", [guard, forever])
 
 	for i in 3:
 		ctx.advance(0.1)
@@ -259,7 +259,7 @@ func _test_reactive_sequence() -> void:
 	ctx.advance(0.1)
 
 	_check(
-		plain.tick(ctx) == DotNpcAiNode.Status.RUNNING,
+		plain.tick(ctx) == GSNpcAiNode.Status.RUNNING,
 		"a PLAIN sequence keeps going after its guard stops holding",
 		"correct, and the trap: it resumes at the action and never asks again"
 	)
@@ -268,7 +268,7 @@ func _test_reactive_sequence() -> void:
 	aborted.clear()
 	holding["on"] = true
 
-	var reactive := DotNpcAiSequence.reactive_with(&"reactive", [guard, forever])
+	var reactive := GSNpcAiSequence.reactive_with(&"reactive", [guard, forever])
 
 	for i in 3:
 		ctx.advance(0.1)
@@ -280,7 +280,7 @@ func _test_reactive_sequence() -> void:
 	ctx.advance(0.1)
 
 	_check(
-		reactive.tick(ctx) == DotNpcAiNode.Status.FAILURE,
+		reactive.tick(ctx) == GSNpcAiNode.Status.FAILURE,
 		"and stops the moment the guard stops holding"
 	)
 	_check(
@@ -297,25 +297,25 @@ func _test_selector_priority() -> void:
 	var ctx := _context()
 	var log: Array = []
 
-	var selector := DotNpcAiSelector.new(&"sel", [
-		DotNpcAiSequence.new(&"first", [
-			DotNpcAiLeaf.Condition.new(&"never", func(_c: DotNpcAiContext) -> bool: return false),
+	var selector := GSNpcAiSelector.new(&"sel", [
+		GSNpcAiSequence.new(&"first", [
+			GSNpcAiLeaf.Condition.new(&"never", func(_c: GSNpcAiContext) -> bool: return false),
 			_counting(0, log, "first"),
 		]),
 		_counting(0, log, "second"),
 		_counting(0, log, "third"),
 	])
 
-	_check(selector.tick(ctx) == DotNpcAiNode.Status.SUCCESS, "it succeeds")
+	_check(selector.tick(ctx) == GSNpcAiNode.Status.SUCCESS, "it succeeds")
 	_check(log.count("first") == 0, "skipping the branch whose guard failed")
 	_check(log.count("second") == 1, "taking the first that could run")
 	_check(log.count("third") == 0, "and stopping there")
 
-	var all_fail := DotNpcAiSelector.new(&"none", [
-		DotNpcAiLeaf.Condition.new(&"no", func(_c: DotNpcAiContext) -> bool: return false),
+	var all_fail := GSNpcAiSelector.new(&"none", [
+		GSNpcAiLeaf.Condition.new(&"no", func(_c: GSNpcAiContext) -> bool: return false),
 	])
 	_check(
-		all_fail.tick(ctx) == DotNpcAiNode.Status.FAILURE,
+		all_fail.tick(ctx) == GSNpcAiNode.Status.FAILURE,
 		"and fails only when every child has"
 	)
 	_done()
@@ -329,16 +329,16 @@ func _test_reactive_selector() -> void:
 	var aborted: Array = []
 	var alarm := {"on": false}
 
-	var urgent := DotNpcAiSequence.new(&"urgent", [
-		DotNpcAiLeaf.Condition.new(&"alarm", func(_c: DotNpcAiContext) -> bool:
+	var urgent := GSNpcAiSequence.new(&"urgent", [
+		GSNpcAiLeaf.Condition.new(&"alarm", func(_c: GSNpcAiContext) -> bool:
 			return bool(alarm["on"])),
 		_counting(5, log, "flee"),
 	])
 
 	var wander := _counting(100, log, "wander")
-	wander.on_abort = func(_c: DotNpcAiContext) -> void: aborted.append("wander")
+	wander.on_abort = func(_c: GSNpcAiContext) -> void: aborted.append("wander")
 
-	var selector := DotNpcAiSelector.new(&"root", [urgent, wander])
+	var selector := GSNpcAiSelector.new(&"root", [urgent, wander])
 
 	for i in 3:
 		ctx.advance(0.1)
@@ -359,7 +359,7 @@ func _test_reactive_selector() -> void:
 	)
 	_check(not wander.is_running, "so it is no longer running")
 
-	var strict := DotNpcAiSelector.new(&"strict", [urgent, wander])
+	var strict := GSNpcAiSelector.new(&"strict", [urgent, wander])
 	strict.reactive = false
 	_check(not strict.reactive, "and a game that wants the other behaviour can have it")
 	_done()
@@ -371,25 +371,25 @@ func _test_parallel() -> void:
 	var ctx := _context()
 	var log: Array = []
 
-	var both := DotNpcAiParallel.new(&"both", [
+	var both := GSNpcAiParallel.new(&"both", [
 		_counting(2, log, "walk"),
 		_counting(2, log, "shout"),
 	])
 
 	ctx.advance(0.1)
-	_check(both.tick(ctx) == DotNpcAiNode.Status.RUNNING, "it runs while its children do")
+	_check(both.tick(ctx) == GSNpcAiNode.Status.RUNNING, "it runs while its children do")
 	_check(
 		log.count("walk") == 1 and log.count("shout") == 1,
 		"and every child gets a tick"
 	)
 
-	var failing := DotNpcAiParallel.new(&"mixed", [
-		DotNpcAiLeaf.Condition.new(&"no", func(_c: DotNpcAiContext) -> bool: return false),
+	var failing := GSNpcAiParallel.new(&"mixed", [
+		GSNpcAiLeaf.Condition.new(&"no", func(_c: GSNpcAiContext) -> bool: return false),
 		_counting(0, log, "still ticked"),
 	])
 
 	ctx.advance(0.1)
-	_check(failing.tick(ctx) == DotNpcAiNode.Status.FAILURE, "one failure fails it")
+	_check(failing.tick(ctx) == GSNpcAiNode.Status.FAILURE, "one failure fails it")
 	_check(
 		log.count("still ticked") == 1,
 		"but every child was ticked before it decided",
@@ -403,42 +403,42 @@ func _test_decorators() -> void:
 
 	var ctx := _context()
 
-	var inverter := DotNpcAiDecorator.Inverter.new(
+	var inverter := GSNpcAiDecorator.Inverter.new(
 		&"not",
-		DotNpcAiLeaf.Condition.new(&"no", func(_c: DotNpcAiContext) -> bool: return false)
+		GSNpcAiLeaf.Condition.new(&"no", func(_c: GSNpcAiContext) -> bool: return false)
 	)
-	_check(inverter.tick(ctx) == DotNpcAiNode.Status.SUCCESS, "an inverter inverts")
+	_check(inverter.tick(ctx) == GSNpcAiNode.Status.SUCCESS, "an inverter inverts")
 
-	var succeeder := DotNpcAiDecorator.Succeeder.new(
+	var succeeder := GSNpcAiDecorator.Succeeder.new(
 		&"try",
-		DotNpcAiLeaf.Condition.new(&"no", func(_c: DotNpcAiContext) -> bool: return false)
+		GSNpcAiLeaf.Condition.new(&"no", func(_c: GSNpcAiContext) -> bool: return false)
 	)
-	_check(succeeder.tick(ctx) == DotNpcAiNode.Status.SUCCESS, "a succeeder swallows failure")
+	_check(succeeder.tick(ctx) == GSNpcAiNode.Status.SUCCESS, "a succeeder swallows failure")
 
 	var runs: Array = []
-	var cooldown := DotNpcAiDecorator.Cooldown.new(
+	var cooldown := GSNpcAiDecorator.Cooldown.new(
 		&"attack",
-		DotNpcAiLeaf.Action.new(&"swing", func(_c: DotNpcAiContext) -> bool:
+		GSNpcAiLeaf.Action.new(&"swing", func(_c: GSNpcAiContext) -> bool:
 			runs.append(1)
 			return true),
 		2.0
 	)
 
 	ctx.advance(0.1)
-	_check(cooldown.tick(ctx) == DotNpcAiNode.Status.SUCCESS, "a cooldown runs the first time")
+	_check(cooldown.tick(ctx) == GSNpcAiNode.Status.SUCCESS, "a cooldown runs the first time")
 
 	ctx.advance(0.1)
-	_check(cooldown.tick(ctx) == DotNpcAiNode.Status.FAILURE, "and refuses inside the wait")
+	_check(cooldown.tick(ctx) == GSNpcAiNode.Status.FAILURE, "and refuses inside the wait")
 	_check(runs.size() == 1, "so the child did not run again")
 
 	ctx.advance(3.0)
-	_check(cooldown.tick(ctx) == DotNpcAiNode.Status.SUCCESS, "and allows it once it has passed")
+	_check(cooldown.tick(ctx) == GSNpcAiNode.Status.SUCCESS, "and allows it once it has passed")
 
-	var wait := DotNpcAiDecorator.Wait.new(&"pause", 1.0)
+	var wait := GSNpcAiDecorator.Wait.new(&"pause", 1.0)
 	ctx.advance(0.1)
-	_check(wait.tick(ctx) == DotNpcAiNode.Status.RUNNING, "a wait waits")
+	_check(wait.tick(ctx) == GSNpcAiNode.Status.RUNNING, "a wait waits")
 	ctx.advance(2.0)
-	_check(wait.tick(ctx) == DotNpcAiNode.Status.SUCCESS, "and then succeeds")
+	_check(wait.tick(ctx) == GSNpcAiNode.Status.SUCCESS, "and then succeeds")
 	_done()
 
 
@@ -451,23 +451,23 @@ func _test_repeat_does_not_hang() -> void:
 	# A child that succeeds WITHOUT ever suspending. A repeater written as a loop hangs
 	# the process here rather than misbehaving, which is the fan-out trap in another
 	# costume — and a hung headless run looks exactly like a slow one.
-	var repeat := DotNpcAiDecorator.Repeat.new(
+	var repeat := GSNpcAiDecorator.Repeat.new(
 		&"three times",
-		DotNpcAiLeaf.Action.new(&"count", func(_c: DotNpcAiContext) -> bool:
+		GSNpcAiLeaf.Action.new(&"count", func(_c: GSNpcAiContext) -> bool:
 			runs.append(1)
 			return true),
 		3
 	)
 
-	var status := DotNpcAiNode.Status.RUNNING
+	var status := GSNpcAiNode.Status.RUNNING
 	var ticks := 0
 
-	while status == DotNpcAiNode.Status.RUNNING and ticks < 20:
+	while status == GSNpcAiNode.Status.RUNNING and ticks < 20:
 		ctx.advance(0.1)
 		status = repeat.tick(ctx)
 		ticks += 1
 
-	_check(status == DotNpcAiNode.Status.SUCCESS, "it finishes")
+	_check(status == GSNpcAiNode.Status.SUCCESS, "it finishes")
 	_check(runs.size() == 3, "after exactly three repetitions", "%d" % runs.size())
 	_check(ticks == 3, "one per tick, rather than looping inside one", "%d ticks" % ticks)
 	_done()
@@ -481,13 +481,13 @@ func _test_machine() -> void:
 	var ticked: Array = []
 	var entered: Array = []
 
-	var machine := DotNpcAiMachine.new()
+	var machine := GSNpcAiMachine.new()
 
-	var idle := DotNpcAiState.make(&"idle", func(_c: DotNpcAiContext) -> void: ticked.append("idle"))
-	idle.on_enter = func(_c: DotNpcAiContext) -> void: entered.append("idle")
-	idle.when(func(_c: DotNpcAiContext) -> bool: return bool(alerted["on"]), &"chasing")
+	var idle := GSNpcAiState.make(&"idle", func(_c: GSNpcAiContext) -> void: ticked.append("idle"))
+	idle.on_enter = func(_c: GSNpcAiContext) -> void: entered.append("idle")
+	idle.when(func(_c: GSNpcAiContext) -> bool: return bool(alerted["on"]), &"chasing")
 
-	var chasing := DotNpcAiState.make(&"chasing", func(_c: DotNpcAiContext) -> void: ticked.append("chasing"))
+	var chasing := GSNpcAiState.make(&"chasing", func(_c: GSNpcAiContext) -> void: ticked.append("chasing"))
 	chasing.after(2.0, &"idle")
 
 	machine.add(idle).add(chasing)
@@ -534,18 +534,18 @@ func _test_machine_thrash() -> void:
 	_section("state machine: two states fighting")
 
 	var ctx := _context()
-	var machine := DotNpcAiMachine.new()
+	var machine := GSNpcAiMachine.new()
 
 	# Each sends the NPC to the other, unconditionally. Written by accident every time
 	# somebody adds a state, and an uncapped machine hangs the server rather than
 	# misbehaving.
 	machine.add(
-		DotNpcAiState.make(&"a")
-			.when(func(_c: DotNpcAiContext) -> bool: return true, &"b")
+		GSNpcAiState.make(&"a")
+			.when(func(_c: GSNpcAiContext) -> bool: return true, &"b")
 	)
 	machine.add(
-		DotNpcAiState.make(&"b")
-			.when(func(_c: DotNpcAiContext) -> bool: return true, &"a")
+		GSNpcAiState.make(&"b")
+			.when(func(_c: GSNpcAiContext) -> bool: return true, &"a")
 	)
 
 	ctx.advance(0.1)

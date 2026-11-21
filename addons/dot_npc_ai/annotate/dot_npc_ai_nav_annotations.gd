@@ -1,8 +1,8 @@
-class_name DotNpcAiNavAnnotations
+class_name GSNpcAiNavAnnotations
 extends RefCounted
 
 ## What a map means to somebody walking it, from its navigation mesh and colliders: links (drops, jumps the mesh does not join), spots (out of sight or behind cover) and chokepoints.
-## [b]Data only, cached by [member key].[/b] [DotNpcAiNavAnnotator] fills it; it names no navigation class, so any pathing reads the same points. The key digests mesh, settings and [constant VERSION], so one file per map serves every machine.
+## [b]Data only, cached by [member key].[/b] [GSNpcAiNavAnnotator] fills it; it names no navigation class, so any pathing reads the same points. The key digests mesh, settings and [constant VERSION], so one file per map serves every machine.
 ## Spots are dictionaries compatible with GameSpice Bot's hiding layer (`at`, `exposure`, `seen_by`).
 
 # No log channel: a container. The annotator logs what it found.
@@ -12,7 +12,7 @@ extends RefCounted
 const VERSION := 1
 
 ## A link's kind. A drop is walked off; a jump up and a jump across need the jump button.
-## A ladder and anything else a game declares ([method DotNpcAiNavAnnotator.declare]) keep
+## A ladder and anything else a game declares ([method GSNpcAiNavAnnotator.declare]) keep
 ## the kind they were given; [constant LINK_GAME_FIRST] and above are a game's own.
 const LINK_DROP := 0
 const LINK_JUMP_UP := 1
@@ -132,58 +132,58 @@ func to_dict() -> Dictionary:
 
 ## The annotations [method to_dict] wrote, or a failure for a different [constant VERSION]
 ## or a malformed document.
-static func from_dict(d: Dictionary) -> DotResult:
+static func from_dict(d: Dictionary) -> GSResult:
 	if int(d.get("version", -1)) != VERSION:
-		return DotResult.fail(DotError.CODE_VERSION, "annotations of version %s, this reads %d" % [str(d.get("version", "none")), VERSION])
-	var out := DotNpcAiNavAnnotations.new()
+		return GSResult.fail(GSError.CODE_VERSION, "annotations of version %s, this reads %d" % [str(d.get("version", "none")), VERSION])
+	var out := GSNpcAiNavAnnotations.new()
 	out.key = str(d.get("key", ""))
 	for row: Variant in d.get("links", []):
 		if not (row is Array) or (row as Array).size() < 4:
-			return DotResult.fail(DotError.CODE_PARSE, "a link row is malformed")
+			return GSResult.fail(GSError.CODE_PARSE, "a link row is malformed")
 		out.links.append({"from": _p(row[0]), "to": _p(row[1]), "kind": int(row[2]), "cost": float(row[3])})
 	for row: Variant in d.get("spots", []):
 		if not (row is Array) or (row as Array).size() < 7:
-			return DotResult.fail(DotError.CODE_PARSE, "a spot row is malformed")
+			return GSResult.fail(GSError.CODE_PARSE, "a spot row is malformed")
 		out.spots.append({"at": _p(row[0]), "normal": _p(row[1]), "exposure": float(row[2]), "seen_by": int(row[3]),
 			"enclosure": float(row[4]), "low": int(row[5]), "high": int(row[6])})
 	for i: Variant in d.get("hiding", []):
 		if int(i) < 0 or int(i) >= out.spots.size():
-			return DotResult.fail(DotError.CODE_PARSE, "a hiding index is out of range")
+			return GSResult.fail(GSError.CODE_PARSE, "a hiding index is out of range")
 		out.hiding.append(int(i))
 	for row: Variant in d.get("chokepoints", []):
 		if not (row is Array) or (row as Array).size() < 3:
-			return DotResult.fail(DotError.CODE_PARSE, "a chokepoint row is malformed")
+			return GSResult.fail(GSError.CODE_PARSE, "a chokepoint row is malformed")
 		out.chokepoints.append({"at": _p(row[0]), "width": float(row[1]), "traffic": float(row[2])})
 	var st: Variant = d.get("stats", {})
 	out.stats = st if st is Dictionary else {}
-	return DotResult.success(out)
+	return GSResult.success(out)
 
 
 ## Writes [method to_dict] as JSON to [param path] (a `user://` cache file, usually named
 ## after [member key]).
-func save(path: String) -> DotResult:
+func save(path: String) -> GSResult:
 	DirAccess.make_dir_recursive_absolute(path.get_base_dir())
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	if f == null:
-		return DotResult.fail(DotError.CODE_IO, "cannot write %s: %s" % [path, error_string(FileAccess.get_open_error())])
+		return GSResult.fail(GSError.CODE_IO, "cannot write %s: %s" % [path, error_string(FileAccess.get_open_error())])
 	f.store_string(JSON.stringify(to_dict()))
 	f.close()
 	# user:// in a browser is a mirror that is lost unless flushed.
-	DotWeb.sync_filesystem()
-	return DotResult.success(path)
+	GSWeb.sync_filesystem()
+	return GSResult.success(path)
 
 
 ## The annotations at [param path], or a failure when there is none, it does not read, or
 ## it was made for another key than [param expect_key] (empty to accept any).
-static func load_file(path: String, expect_key: String = "") -> DotResult:
+static func load_file(path: String, expect_key: String = "") -> GSResult:
 	if not FileAccess.file_exists(path):
-		return DotResult.fail(DotError.CODE_IO, "no annotations at %s" % path)
+		return GSResult.fail(GSError.CODE_IO, "no annotations at %s" % path)
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not (parsed is Dictionary):
-		return DotResult.fail(DotError.CODE_PARSE, "%s is not an annotations document" % path)
+		return GSResult.fail(GSError.CODE_PARSE, "%s is not an annotations document" % path)
 	var res := from_dict(parsed)
-	if res.ok and expect_key != "" and (res.value as DotNpcAiNavAnnotations).key != expect_key:
-		return DotResult.fail(DotError.CODE_INTEGRITY, "%s was made for another map or other settings" % path)
+	if res.ok and expect_key != "" and (res.value as GSNpcAiNavAnnotations).key != expect_key:
+		return GSResult.fail(GSError.CODE_INTEGRITY, "%s was made for another map or other settings" % path)
 	return res
 
 
