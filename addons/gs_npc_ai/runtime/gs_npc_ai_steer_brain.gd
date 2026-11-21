@@ -1,5 +1,5 @@
 class_name GSNpcAiSteerBrain
-extends "dot_npc_ai_brain.gd"
+extends "gs_npc_ai_brain.gd"
 
 ## A [GSNpcAiBrain] for a crowd that needs steering and no tree: seeks its target (wanders without one) and keeps its spacing.
 ## Thinks as gather, decide, apply: only the decide step is pure, so it is the one brain here that may run on [member GSNpcSpawner.think_workers].

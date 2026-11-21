@@ -234,7 +234,7 @@ static func key_for(mesh: NavigationMesh, with: Dictionary) -> String:
 static func _key_begin(mesh: NavigationMesh) -> HashingContext:
 	var ctx := HashingContext.new()
 	ctx.start(HashingContext.HASH_SHA256)
-	ctx.update(("dot_npc_ai_nav_annotations/%d|" % GSNpcAiNavAnnotations.VERSION).to_utf8_buffer())
+	ctx.update(("gs_npc_ai_nav_annotations/%d|" % GSNpcAiNavAnnotations.VERSION).to_utf8_buffer())
 	if mesh != null:
 		ctx.update(mesh.get_vertices().to_byte_array())
 	return ctx

@@ -40,7 +40,7 @@ extends GSConfig
 
 
 func env_prefix() -> String:
-	return "DOT_NPC_AI_TOKENS_"
+	return "GS_NPC_AI_TOKENS_"
 
 
 func cli_prefix() -> String:

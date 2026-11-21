@@ -4,7 +4,7 @@
 
 A behaviour tree decides *what* to do. Two NPCs running the same tree are the same NPC: they notice at the same instant, shoot with the same accuracy, and pick the same branch every time. That is not a tuning problem, it is a missing layer, and every game that shipped good bots has it.
 
-`GSNpcAiCharacter` is the characteristics table of the late-1990s arena shooters' bots, read out of an open-sourced original. It is cut down to what is not specific to that engine: the chat characteristics belong to a game, the weapon-specific aim to dot-combat, the item weights to the tree, and grapple and weapon-jumping to a movement model this family does not have.
+`GSNpcAiCharacter` is the characteristics table of the late-1990s arena shooters' bots, read out of an open-sourced original. It is cut down to what is not specific to that engine: the chat characteristics belong to a game, the weapon-specific aim to gs-combat, the item weights to the tree, and grapple and weapon-jumping to a movement model this family does not have.
 
 Three of the fields do work rather than describe intent, and they are the reason it is a class:
 
@@ -20,7 +20,7 @@ Three of the fields do work rather than describe intent, and they are the reason
 
 ## The reaction clock is `target_since`, not `engaged_at`
 
-`GSNpcAiBrain.has_reacted()` measures from `GSNpcInstance.target_since`, which dot-npc sets when `target_id` **changes** and not while it is held, including re-perceiving the *same* target after a gap (not a new commitment; restarting the clock would mean an NPC never finishes reacting to somebody who keeps stepping behind a pillar). `engaged_at` is refreshed on every pass the target is perceived, because it answers "is this NPC still busy"; measuring from it kept the gate shut for ever. The story is in [history.md](history.md#has_reacted-was-false-for-ever).
+`GSNpcAiBrain.has_reacted()` measures from `GSNpcInstance.target_since`, which gs-npc sets when `target_id` **changes** and not while it is held, including re-perceiving the *same* target after a gap (not a new commitment; restarting the clock would mean an NPC never finishes reacting to somebody who keeps stepping behind a pillar). `engaged_at` is refreshed on every pass the target is perceived, because it answers "is this NPC still busy"; measuring from it kept the gate shut for ever. The story is in [history.md](history.md#has_reacted-was-false-for-ever).
 
 ## The randomness is reproducible, and that was not free
 

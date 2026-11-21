@@ -1,4 +1,4 @@
-extends "res://addons/dot_npc_ai/runtime/dot_npc_ai_brain.gd"
+extends "res://addons/gs_npc_ai/runtime/gs_npc_ai_brain.gd"
 
 ## A brain for the self-test: the shape a game's soldier takes, built from the base class's ready-made leaves. Tree: reactive selector of flee danger (a grenade beats everything), a reactive sequence on "has a target?" (attack slot walks at it, else surround), search, idle.
 ## No character of its own: the definition names one with `"skill"` in its meta and its squad with `"squad"`, the catalogue paths the suite asserts.

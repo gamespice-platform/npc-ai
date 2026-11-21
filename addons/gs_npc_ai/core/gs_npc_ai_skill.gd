@@ -16,7 +16,7 @@ const CVAR_REACTION_MIN := "npc_reaction_min"
 const CVAR_HUMANISE := "npc_humanise"
 
 ## Where [method attach] keeps this on a director.
-const META := &"dot_npc_ai_skill"
+const META := &"gs_npc_ai_skill"
 
 ## The names [member skill] accepts as well as a number.
 ## Hard is half-way, not nightmare, which sits at the end of the scale and would leave an operator nowhere to go.

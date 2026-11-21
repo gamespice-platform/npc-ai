@@ -1,4 +1,4 @@
-extends "dot_npc_ai_brain_tactics.gd"
+extends "gs_npc_ai_brain_tactics.gd"
 
 ## What [GSNpcAiBrain] notices each tick: target, damage, sounds and squad reports, into the conditions. Not a public class.
 

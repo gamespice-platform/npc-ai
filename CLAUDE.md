@@ -4,7 +4,7 @@
 
 Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is specific to NPC decisions. The reasoning is in [docs/](docs/README.md).
 
-**Depends on dot-core and dot-npc, and only the brain names dot-npc** (`runtime/dot_npc_ai_brain.gd` and the `dot_npc_ai_brain_state.gd` base it extends, which holds its fields and constants; edit state there, behaviour in the brain). Keep it that way: the decision engine is meant to be liftable. [decisions](docs/decisions.md#why-it-is-a-separate-addon)
+**Depends on gs-core and gs-npc, and only the brain names gs-npc** (`runtime/gs_npc_ai_brain.gd` and the `gs_npc_ai_brain_state.gd` base it extends, which holds its fields and constants; edit state there, behaviour in the brain). Keep it that way: the decision engine is meant to be liftable. [decisions](docs/decisions.md#why-it-is-a-separate-addon)
 
 ## Read before
 
@@ -21,13 +21,13 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 
 | Path | What |
 | --- | --- |
-| `addons/dot_npc_ai/tree/` | `GSNpcAiNode`, composites (selector, sequence, random selector, parallel), decorators, leaves |
-| `addons/dot_npc_ai/fsm/` | `GSNpcAiMachine`, `GSNpcAiState` |
-| `addons/dot_npc_ai/core/` | blackboard, context, conditions, character, skill, memory, sounds, squad(s), heatmap and heat keeper |
-| `addons/dot_npc_ai/steer/` | `GSNpcAiSteering` (directions only), `GSNpcAiTactics` (scoring places to stand) |
-| `addons/dot_npc_ai/runtime/` | `GSNpcAiBrain`: the one file that joins this to GameSpice NPC; `GSNpcAiScheduler`, the opt-in level-of-detail time-slicer ([scheduler](docs/scheduler.md)); `GSNpcAiAvoidance`, opt-in local avoidance for crowds ([avoidance](docs/avoidance.md)) |
-| `addons/dot_npc_ai/annotate/` | `GSNpcAiNavAnnotator` (a `GSJob` over a `NavigationMesh` and a `World3D`; settings and queries in `dot_npc_ai_nav_annotator_state.gd`, the islands phase in `..._islands.gd`, both extended by path), `GSNpcAiNavAnnotations` (the result, saved per cache key), `GSNpcAiNavDebug` (draws it) |
-| `addons/dot_npc_ai/dot_npc_ai_api.gd` | the API level (2: map annotations), preloaded by path like every addon's |
+| `addons/gs_npc_ai/tree/` | `GSNpcAiNode`, composites (selector, sequence, random selector, parallel), decorators, leaves |
+| `addons/gs_npc_ai/fsm/` | `GSNpcAiMachine`, `GSNpcAiState` |
+| `addons/gs_npc_ai/core/` | blackboard, context, conditions, character, skill, memory, sounds, squad(s), heatmap and heat keeper |
+| `addons/gs_npc_ai/steer/` | `GSNpcAiSteering` (directions only), `GSNpcAiTactics` (scoring places to stand) |
+| `addons/gs_npc_ai/runtime/` | `GSNpcAiBrain`: the one file that joins this to GameSpice NPC; `GSNpcAiScheduler`, the opt-in level-of-detail time-slicer ([scheduler](docs/scheduler.md)); `GSNpcAiAvoidance`, opt-in local avoidance for crowds ([avoidance](docs/avoidance.md)) |
+| `addons/gs_npc_ai/annotate/` | `GSNpcAiNavAnnotator` (a `GSJob` over a `NavigationMesh` and a `World3D`; settings and queries in `gs_npc_ai_nav_annotator_state.gd`, the islands phase in `..._islands.gd`, both extended by path), `GSNpcAiNavAnnotations` (the result, saved per cache key), `GSNpcAiNavDebug` (draws it) |
+| `addons/gs_npc_ai/gs_npc_ai_api.gd` | the API level (2: map annotations), preloaded by path like every addon's |
 | `examples/selftest/` | the suite's layers, each extending the one before: `selftest_base`, `steering_tests`, `character_tests`, `conditions_tests`, `brain_tests`, `skill_tests`, `world_tests`; `npc_ai_selftest.gd` is the top and `_run` order |
 | `fixtures/nav_toy_level.gd` | a level built in code with one of everything the annotator looks for, and the bake GSBotNav would do |
 | `tools/annotate_map.gd` | annotates the toy or a saved map (`--source map.res --meta map_meta.json`), prints counts and the slowest slice, photographs it (`--out PREFIX`, under xvfb-run) |
@@ -39,7 +39,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 
 ## Running and testing
 
-- Link `addons/dot_core` and `addons/dot_npc` from their repos once ([development setup](../../docs/development-setup.md)), then the family's two steps ([family CLAUDE.md](../../CLAUDE.md#validating-anything)) and `timeout 180 godot --headless --path . res://examples/npc_ai_selftest.tscn`. It exits non-zero on failure and takes tens of seconds because of the physics sections.
+- Link `addons/gs_core` and `addons/gs_npc` from their repos once ([development setup](../../docs/development-setup.md)), then the family's two steps ([family CLAUDE.md](../../CLAUDE.md#validating-anything)) and `timeout 180 godot --headless --path . res://examples/npc_ai_selftest.tscn`. It exits non-zero on failure and takes tens of seconds because of the physics sections.
 - **Any change to how a squad moves wants the trace plotted and looked at.** The first surround heaped with every check passing. [tactics](docs/tactics.md#everything-is-automatic-once-the-director-carries-it)
 - A change to the brain is not done until the games that use it (game-fatal-contact, game-airdrift, game-playlot) still pass; `has_reacted` being false for ever was found from a game.
 
@@ -67,7 +67,7 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 
 **Character and skill**
 
-- Chance goes through the seeded integer hash, never `randf`; keep the mixer non-negative (`>>` sign-extends). Each NPC gets its own seed (`with_seed()`) from dot-npc's `npc.seed`, never `instance_id` (the object id moves between runs). [character](docs/character.md#the-randomness-is-reproducible-and-that-was-not-free)
+- Chance goes through the seeded integer hash, never `randf`; keep the mixer non-negative (`>>` sign-extends). Each NPC gets its own seed (`with_seed()`) from gs-npc's `npc.seed`, never `instance_id` (the object id moves between runs). [character](docs/character.md#the-randomness-is-reproducible-and-that-was-not-free)
 - `has_reacted()` measures from `target_since`, never `engaged_at`. [character](docs/character.md#the-reaction-clock-is-target_since-not-engaged_at)
 - `nightmare()` keeps reaction above zero and accuracy below one; `npc_reaction_min` floors it. [character](docs/character.md#why-a-tree-alone-is-not-an-npc)
 - `GSNpcAiSkill` moves ability, never personality, only in the direction asked, from `base_character`, and lives on the director as metadata, never in `GSRegistry`. `bind_cvars` reads the value back after registering. [character](docs/character.md#the-servers-skill-which-is-not-a-difficulty-setting)
@@ -122,4 +122,4 @@ Read the family [CLAUDE.md](../../CLAUDE.md) first; this file is only what is sp
 | What the NPCs learn of a map | `GSNpcAiHeatmap`, kept per map by `GSNpcAiHeatKeeper`; patrolled with `patrol_hot` |
 | What a map offers (drops, jumps, hiding spots, cover, chokepoints) | `GSNpcAiNavAnnotator` over the bake, cached by `cache_key()`; `_keep_link`, `_hide_score`, `los_fn`, `declare`, `seeds`, the `npc_nav_*` cvars |
 
-Deliberately not here: an editor, utility scoring of decisions, chat and barks, weapon knowledge, population and pacing (dot-npc-ai-director), formations and orders, animation, pathfinding (dot-npc and dot-bot's GSBotNav; the annotations here only add links and places to them), threading. [decisions](docs/decisions.md#deliberately-not-here)
+Deliberately not here: an editor, utility scoring of decisions, chat and barks, weapon knowledge, population and pacing (gs-npc-ai-director), formations and orders, animation, pathfinding (gs-npc and gs-bot's GSBotNav; the annotations here only add links and places to them), threading. [decisions](docs/decisions.md#deliberately-not-here)

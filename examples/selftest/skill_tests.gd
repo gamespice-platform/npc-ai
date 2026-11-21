@@ -191,7 +191,7 @@ func _test_humanised_leaves() -> void:
 			t_glance = float(i) * 0.05
 			break
 	_check(t_glance >= 0.0, "a glancing character looks aside at some time", "%.2f" % t_glance)
-	var src := FileAccess.get_file_as_string("res://addons/dot_npc_ai/runtime/dot_npc_ai_brain_tactics.gd")
+	var src := FileAccess.get_file_as_string("res://addons/gs_npc_ai/runtime/gs_npc_ai_brain_tactics.gd")
 	_check(src.contains("glance_offset(ctx.now)"), "search() adds the glance to its sweep")
 
 	brain.unbind()
@@ -380,7 +380,7 @@ func _test_brain_under_a_skill() -> void:
 	)
 	_check(
 		npc.sight_scale > 1.0,
-		"and its alertness reaches dot-npc's senses, which nothing read before",
+		"and its alertness reaches gs-npc's senses, which nothing read before",
 		"sight scale %.2f" % npc.sight_scale
 	)
 

@@ -4,7 +4,7 @@
 
 A game that wants a catalogue, a population budget and a chaser does not need a behaviour tree, and making it install one is how an addon family gets a reputation for being heavy. GameSpice NPC's own `GSNpcBrain` is enough for most NPCs in most games.
 
-**Only one file names dot-npc.** Everything in `tree/`, `fsm/`, `steer/` and `core/` names dot-core and nothing else; only `runtime/dot_npc_ai_brain.gd` mentions dot-npc. The decision engine could be lifted into a vehicle, a 2D game or a menu, and the lines that join it to an NPC are the part that could not.
+**Only one file names gs-npc.** Everything in `tree/`, `fsm/`, `steer/` and `core/` names gs-core and nothing else; only `runtime/gs_npc_ai_brain.gd` mentions gs-npc. The decision engine could be lifted into a vehicle, a 2D game or a menu, and the lines that join it to an NPC are the part that could not.
 
 ## The one idea
 
@@ -66,10 +66,10 @@ Every method returns a **desired direction** and moves nothing. A steering libra
 
 - **Separation is weighted below seeking** in `GSNpcAiBrain.steer_with_spacing` (0.6 against 1.0). Equal weights give a crowd that spreads out and stops arriving: at a doorway the pushes cancel the seek and the horde mills about outside, which reads as the pathfinder being broken.
 - **A horizontal separation cannot separate a stack.** Two NPCs one above the other have a horizontal offset of nothing. `separate()` takes a `tie_break` direction for a degenerate pair, and its range test is horizontal: a 3D test calls a stacked pair "1.8 metres apart" and skips exactly the pair that most needs shoving.
-- **The tie-break is the right of the NPC's heading, from `facing()`**, never `node.global_transform.basis.x`: that property does not exist on a `Node2D`, and dot-npc maps 2D bodies onto the XZ plane. Nothing else here touches a node.
+- **The tie-break is the right of the NPC's heading, from `facing()`**, never `node.global_transform.basis.x`: that property does not exist on a `Node2D`, and gs-npc maps 2D bodies onto the XZ plane. Nothing else here touches a node.
 - **`wander` is a drifting angle, not a random direction.** A fresh random direction per tick averages to standing still and looks like a seizure; one re-picked every few seconds looks like a patrol route. It is seeded per NPC rather than using a global RNG, because a global one makes an NPC's wandering depend on how many others wandered first, and a replay of the same inputs then produces a different world.
 - **`blend` normalises.** Without it an NPC runs faster when two urges happen to agree, which is invisible until somebody wonders why fleeing is quicker than chasing.
-- **No headway means rough corners.** `steer_with_spacing` watches its NPC: steering at somewhere over two metres off and not moving half a metre in `stuck_seconds` (1.5), it calls dot-npc's `GSNpcPath.go_rough`, and for four seconds the path is the graph's own corners. A smoothed path on a coarse graph clips a door jamb thinner than its spacing, and game-zombie-zone's specials, which have no climb of their own, pressed into the ballpark's doors until each wave's overtime.
+- **No headway means rough corners.** `steer_with_spacing` watches its NPC: steering at somewhere over two metres off and not moving half a metre in `stuck_seconds` (1.5), it calls gs-npc's `GSNpcPath.go_rough`, and for four seconds the path is the graph's own corners. A smoothed path on a coarse graph clips a door jamb thinner than its spacing, and game-zombie-zone's specials, which have no climb of their own, pressed into the ballpark's doors until each wave's overtime.
 - **What a crowd asks about one target is asked once a tick.** `surround` needs who else waits on the target and which way it faces; each waiter walked the whole squad for both, and asked every member's slots, copying the holder list each time: eighty zombies on twelve survivors was six thousand slot lookups a tick. The first waiter works it out and shares it through `GSNpcAiSquad.memo` / `remember`, keyed by the director's clock (one reading for every member, never a brain's own). The trace (`tools/trace_surround.gd`) ends within centimetres of where it did.
 
 ## NPCs should not collide with each other
@@ -90,7 +90,7 @@ So: separation keeps NPCs apart, and the physics keeps them out of the walls.
 - **No utility scoring of decisions.** A third decision model on top of two is a choice nobody needs before they have shipped an NPC. `GSNpcAiCharacter` is a table of weights and not a scorer: it says what an NPC is like, and the tree still decides. Positions are the exception: `GSNpcAiTactics.best_of` scores places to stand, because "where" is always a trade and a trade written as an if-chain stands in the open.
 - **No chat, no barks, no personality beyond the numbers.** That is a game's, and GameSpice Chat's if it wants it.
 - **No weapon knowledge in the character.** `aim_point` takes a travel speed and knows nothing else. GameSpice Combat is where a weapon lives, and naming it here would make this addon fail to parse without it.
-- **No population or pacing.** That is `dot-npc-ai-director`.
+- **No population or pacing.** That is `gs-npc-ai-director`.
 - **No formations or orders.** A squad here shares what it sees, hands out named roles, shares a ring and claims cover; the roles are claimed, never assigned, so there is no leader issuing a plan. Anything that is one ("you two hold the door") is a game's, and roles are the seam it hangs off.
 - **No animation.** `GSNpcNetSync.State` is what a client picks one with.
 - **No pathfinding.** GameSpice NPC owns that, and GameSpice Bot's `GSBotNav` owns the navigation mesh; this steers between the waypoints they give. What is here is what a map means to somebody walking it (links, hiding spots, cover, chokepoints, [navigation-annotations.md](navigation-annotations.md)), worked out from a mesh someone else baked and handed to whichever planner a game uses.

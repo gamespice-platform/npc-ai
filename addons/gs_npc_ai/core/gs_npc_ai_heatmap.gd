@@ -9,7 +9,7 @@ extends RefCounted
 const TRAFFIC := &"traffic"
 const DEATHS := &"deaths"
 
-const META := &"dot_npc_ai_heatmap"
+const META := &"gs_npc_ai_heatmap"
 
 ## Metres per cell. Three is about a corridor's width: fine enough that the left and the
 ## right corridor are different cells, coarse enough that a map is a few hundred of them.

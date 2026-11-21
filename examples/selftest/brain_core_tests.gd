@@ -98,7 +98,7 @@ func _test_brain_on_a_real_npc() -> void:
 	var spawner := _spawner()
 	var npc := spawner.spawn(&"zombie", Vector3.ZERO)
 
-	_check(npc.brain != null, "dot-npc loads a dot-npc-ai brain by PATH")
+	_check(npc.brain != null, "gs-npc loads a gs-npc-ai brain by PATH")
 	_check(npc.brain is GSNpcAiBrain, "and it is one")
 
 	var brain := npc.brain as GSNpcAiBrain

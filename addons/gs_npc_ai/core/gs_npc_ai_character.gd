@@ -40,7 +40,7 @@ const MASK := 0x7FFFFFFFFFFFFFFF
 @export_range(0.1, 2.0, 0.01) var alertness: float = 1.0
 
 ## Seconds a target stays "remembered" after it is lost from sight.
-## Not dot-npc's commitment grace (keep chasing?): this decides whether the NPC still believes it knows where the target is, which prediction shots and searches are made of.
+## Not gs-npc's commitment grace (keep chasing?): this decides whether the NPC still believes it knows where the target is, which prediction shots and searches are made of.
 @export_range(0.0, 60.0, 0.1) var memory_time: float = 5.0
 
 @export_group("Aim")

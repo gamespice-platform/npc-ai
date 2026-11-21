@@ -1,4 +1,4 @@
-extends "dot_npc_ai_brain_state.gd"
+extends "gs_npc_ai_brain_state.gd"
 
 ## Steering, pathing and the scheduler hookup of [GSNpcAiBrain]: how the NPC moves. Not a public class: extend [GSNpcAiBrain] (by path), never this.
 
@@ -196,7 +196,7 @@ func halt() -> void:
 	super()
 
 
-## The director's clock, which is the one dot-npc's senses stamp targets with.
+## The director's clock, which is the one gs-npc's senses stamp targets with.
 func _world_now() -> float:
 	if director != null and director.has_method(&"now"):
 		return float(director.call(&"now"))

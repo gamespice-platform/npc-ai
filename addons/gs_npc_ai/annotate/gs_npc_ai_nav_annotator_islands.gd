@@ -1,4 +1,4 @@
-extends "dot_npc_ai_nav_annotator_state.gd"
+extends "gs_npc_ai_nav_annotator_state.gd"
 
 
 ## The islands phase of [GSNpcAiNavAnnotator]: which islands of the mesh are kept. Not a public class.

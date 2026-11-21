@@ -1,4 +1,4 @@
-extends "dot_npc_ai_brain_motion.gd"
+extends "gs_npc_ai_brain_motion.gd"
 
 ## Memory, search, squad roles, cover and danger of [GSNpcAiBrain]: what it does about what it knows. Not a public class.
 
@@ -229,7 +229,7 @@ func find_cover(threat: Vector3, max_distance: float = 15.0) -> Vector3:
 			if squad.holder_count(slot) > 0 and not squad.holds(slot, self):
 				return -INF
 
-		# dot-npc's own weighting: eight metres of walking per unit of facing.
+		# gs-npc's own weighting: eight metres of walking per unit of facing.
 		return covered * 8.0 - away
 
 	var best := GSNpcAiTactics.best_of(data.cover_positions, scorer)

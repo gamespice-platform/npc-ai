@@ -171,7 +171,7 @@ static func evade(
 
 
 ## Deflects [param direction] around anything in the way. [param obstacles] is `{position: Vector3, radius: float}` (props, NPCs, a vehicle); returns a unit direction, or [param direction] when nothing matters.
-## Not pathfinding: it looks only [param look_ahead] metres down the heading, so dot-npc's graph decides the route and this stops scraping the furniture.
+## Not pathfinding: it looks only [param look_ahead] metres down the heading, so gs-npc's graph decides the route and this stops scraping the furniture.
 ## Deflects sideways rather than stopping: braking in front of an obstacle piles a crowd at a doorway for ever.
 static func avoid(
 	direction: Vector3,

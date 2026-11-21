@@ -26,7 +26,7 @@ extends GSConfig
 
 
 func env_prefix() -> String:
-	return "DOT_NPC_AI_UTILITY_"
+	return "GS_NPC_AI_UTILITY_"
 
 
 func cli_prefix() -> String:

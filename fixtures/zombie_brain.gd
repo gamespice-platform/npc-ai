@@ -1,4 +1,4 @@
-extends "res://addons/dot_npc_ai/runtime/dot_npc_ai_brain.gd"
+extends "res://addons/gs_npc_ai/runtime/gs_npc_ai_brain.gd"
 
 ## A brain for the self-test: a machine of three states over a tree of two branches.
 ## Extends a PATH, not [code]GSNpcAiBrain[/code], and the suite asserts it loads through GameSpice NPC's spawner: that is the shape a brain in a mounted GameSpice Cloud pack must have.

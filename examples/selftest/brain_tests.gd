@@ -593,7 +593,7 @@ class FakeCvar:
 
 
 const STEER_TICKS := 2000
-const STEER_BRAIN := "res://addons/dot_npc_ai/runtime/dot_npc_ai_steer_brain.gd"
+const STEER_BRAIN := "res://addons/gs_npc_ai/runtime/gs_npc_ai_steer_brain.gd"
 
 
 ## The steer brain's gather/decide/apply split: a hash of 2000 ticks of a crowd that wanders, then chases, with decide inline twice

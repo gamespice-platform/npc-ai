@@ -60,7 +60,7 @@ func abort(ctx: GSNpcAiContext) -> void:
 
 
 ## A reproducible number in [0, 1) from two integers, shared by every node that decides by chance. Not [method randf]: a server rewind, a replay and a second headless run must agree, and a global RNG depends on how many others asked first.
-## Kept positive at every step: `>>` on a negative GDScript int shifts ones in, which is reproducible but not uniform (dot-combat's shotgun patterns were a half-moon).
+## Kept positive at every step: `>>` on a negative GDScript int shifts ones in, which is reproducible but not uniform (gs-combat's shotgun patterns were a half-moon).
 static func deterministic_unit(a: int, b: int) -> float:
 	const MASK := 0x7FFFFFFFFFFFFFFF
 
@@ -136,7 +136,7 @@ func _type_name() -> String:
 	if script == null:
 		return "node"
 
-	return script.resource_path.get_file().get_basename().replace("dot_npc_ai_", "")
+	return script.resource_path.get_file().get_basename().replace("gs_npc_ai_", "")
 
 
 func _to_string() -> String:

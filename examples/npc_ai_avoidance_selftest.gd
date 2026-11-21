@@ -35,7 +35,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("dot-npc-ai avoidance self-test")
+	print("gs-npc-ai avoidance self-test")
 	_test_off_by_default()
 	_test_fallback()
 	_test_head_on()

@@ -19,7 +19,7 @@ enum Kind {
 	DANGER,
 }
 
-const META := &"dot_npc_ai_sounds"
+const META := &"gs_npc_ai_sounds"
 
 ## The most sounds kept at once. The oldest go first. A firefight with sixty guns makes a
 ## lot of noise, and a list nobody prunes is a list every NPC walks every tick.

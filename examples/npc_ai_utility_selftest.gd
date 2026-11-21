@@ -35,7 +35,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("dot-npc-ai utility self-test")
+	print("gs-npc-ai utility self-test")
 	_test_off_by_default()
 	_test_curves()
 	_test_scoring()

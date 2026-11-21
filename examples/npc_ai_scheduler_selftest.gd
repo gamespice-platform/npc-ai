@@ -43,7 +43,7 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	print("dot-npc-ai scheduler self-test")
+	print("gs-npc-ai scheduler self-test")
 	_test_off_by_default()
 	_test_tiers()
 	_test_stagger()

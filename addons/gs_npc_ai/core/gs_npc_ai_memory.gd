@@ -2,7 +2,7 @@ class_name GSNpcAiMemory
 extends RefCounted
 
 ## What an NPC knows about its enemies: several of them, how it knows ([enum Source], so a rumour stays a rumour), and where they went.
-## More than one because dot-npc's senses commit to one target; a second seen player should be known when the first dies. [method predicted] extrapolates the smoothed velocity, since the last-seen spot is a wall once the target has rounded two corners.
+## More than one because gs-npc's senses commit to one target; a second seen player should be known when the first dies. [method predicted] extrapolates the smoothed velocity, since the last-seen spot is a wall once the target has rounded two corners.
 ## Forgetting is on read, like [GSNpcAiBlackboard], from the last time anything was learned.
 
 # No log channel: per-NPC knowledge, written and read every think.

@@ -4,7 +4,7 @@ extends RefCounted
 ## Every squad in one world, by name. Put on a director so its brains can find theirs.
 ## A brain joins the squad its definition names (`"squad"` in its meta) or the one its game assigns. Metadata on the director, not [GSRegistry], as [GSNpcAiSkill]: two servers in one process must not share squads.
 
-const META := &"dot_npc_ai_squads"
+const META := &"gs_npc_ai_squads"
 
 var _squads: Dictionary = {}
 

@@ -1,5 +1,5 @@
 class_name GSNpcAiNavAnnotator
-extends "dot_npc_ai_nav_annotator_islands.gd"
+extends "gs_npc_ai_nav_annotator_islands.gd"
 
 ## Works out a map's [GSNpcAiNavAnnotations] from a baked [NavigationMesh] and its colliders: links (drop, jump up, jump across), cover and hiding spots, chokepoints.
 ## [b]Why rays and not the engine's off-mesh links:[/b] the engine bakes none, and where one belongs is geometric, so rays against the colliders work on any map with no editor step. It is a [GSJob] stepped in slices (physics queries only on the main thread), deterministic for a given mesh, settings and [member random_seed].

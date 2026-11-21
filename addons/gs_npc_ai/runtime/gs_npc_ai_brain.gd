@@ -1,11 +1,11 @@
 class_name GSNpcAiBrain
-extends "dot_npc_ai_brain_senses.gd"
+extends "gs_npc_ai_brain_senses.gd"
 
 ## A [GSNpcBrain] that runs a behaviour tree or a state machine. The adapter: the ONLY file in GameSpice NPC AI that names anything from GameSpice NPC, so the tree, machine, blackboard and steering stay liftable into a vehicle, a 2D game or a menu.
 ## A game subclasses it and builds its decision in [method _build] (once, at spawn), e.g. `tree = GSNpcAiSelector.new(&"root", [GSNpcAiSequence.new(&"chase", [...]), GSNpcAiLeaf.Action.new(&"wander", _wander)])`.
 ## Extended by PATH, like every brain: a script in a mounted GameSpice Cloud pack cannot resolve a `class_name`, which is why `brain_script_path` is a path.
 
-const _Leaves := preload("dot_npc_ai_brain_leaves.gd")
+const _Leaves := preload("gs_npc_ai_brain_leaves.gd")
 
 
 func _npc_ready() -> void:
