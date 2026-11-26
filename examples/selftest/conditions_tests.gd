@@ -135,6 +135,134 @@ func _test_memory() -> void:
 	_done()
 
 
+## GameSpice Sim's memory and damage window against the script's, over seeded random operations, to the bit.
+func _test_memory_native() -> void:
+	_section("memory, native against script")
+
+	if not ClassDB.class_exists(&"GSSimNpcAiSenses"):
+		print("  GameSpice Sim is not installed: nothing to compare")
+		_done()
+		return
+
+	var ids: Array[StringName] = [&"a", &"b", &"c", &"d"]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 0x5eed
+	var plain := GSNpcAiMemory.new(false)
+	var native := GSNpcAiMemory.new(true)
+	var now := 0.0
+	var differ := ""
+
+	for step in 3000:
+		now += [0.0, 0.05, 0.2, 0.9][rng.randi_range(0, 3)]
+
+		if step % 500 == 0:
+			var forget_after: float = [5.0, 0.8, 0.0, 2.0][step / 500 % 4]
+			plain.forget_after = forget_after
+			native.forget_after = forget_after
+
+		var id := ids[rng.randi_range(0, ids.size() - 1)]
+		var at := Vector3(rng.randf_range(-50, 50), rng.randf_range(-2, 2), rng.randf_range(-50, 50))
+		var op := rng.randi_range(0, 9)
+		var a: Variant = null
+		var b: Variant = null
+
+		if op <= 3:
+			a = plain.sighted(id, at, now)
+			b = native.sighted(id, at, now)
+		elif op <= 5:
+			a = plain.heard(id, at, now)
+			b = native.heard(id, at, now)
+		elif op == 6:
+			var seen_at := now - rng.randf_range(0.0, 1.0)
+			var v := Vector3(rng.randf_range(-6, 6), 0, rng.randf_range(-6, 6))
+			a = plain.informed(id, at, v, seen_at, now)
+			b = native.informed(id, at, v, seen_at, now)
+		elif op == 7:
+			var amount := rng.randf_range(-5.0, 20.0)
+			a = plain.hurt_by(id, at, amount, now)
+			b = native.hurt_by(id, at, amount, now)
+		elif op == 8:
+			a = plain.freshest(now)
+			b = native.freshest(now)
+		elif rng.randi_range(0, 3) == 0:
+			plain.forget(id)
+			native.forget(id)
+
+		differ = _memory_differs(a, b, "step %d op %d" % [step, op])
+
+		for each in ids:
+			if differ == "":
+				differ = _memory_differs(plain.get_entry(each, now), native.get_entry(each, now), "step %d %s" % [step, each])
+			if differ == "":
+				differ = _native_differs(plain.get_entry(each, now), native.native.get_entry(each, now), "step %d %s held" % [step, each])
+
+		if differ != "":
+			break
+
+	_check(differ == "", "3000 random writes and reads give the same memory, to the bit", differ)
+	_check_damage_native()
+	_done()
+
+
+func _check_damage_native() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 0xda3a
+	var script_log: Array = []
+	var script_memory := GSNpcAiMemory.new(false)
+	var native := GSNpcAiMemory.new(true)
+	var now := 0.0
+	var differ := ""
+
+	for step in 2000:
+		now += [0.0, 0.1, 0.3, 1.2][rng.randi_range(0, 3)]
+		var pending: float = [0.0, 0.0, rng.randf_range(0.0, 30.0), -rng.randf_range(0.0, 5.0)][rng.randi_range(0, 3)]
+		var max_health: float = 0.0 if step % 700 < 50 else 100.0
+		var at := Vector3.INF if rng.randi_range(0, 2) == 0 else Vector3(rng.randf_range(-9, 9), 0, rng.randf_range(-9, 9))
+		var want := GSNpcAiBrain.damage_window(script_log, now, pending, 1.5, max_health, 0.25)
+		var out: PackedFloat64Array = native.native.think(&"t", at, now, pending, max_health, 1.5, 0.25)
+
+		if int(out[0]) != want or native.native.hits() != script_log.size():
+			differ = "step %d: bits %d against %d, hits %d against %d" % [step, int(out[0]), want, native.native.hits(), script_log.size()]
+		elif (at == Vector3.INF) != (out.size() == 1):
+			differ = "step %d: sighted %d values" % [step, out.size()]
+		elif at != Vector3.INF:
+			differ = _memory_differs(script_memory.sighted(&"t", at, now), native.mirror(&"t", out, now, 1), "step %d sighted" % step)
+
+		if differ != "":
+			break
+
+	_check(differ == "", "and so does the damage window, with a sighting in the same call", differ)
+
+
+## Empty when [param a] and [param b] (entries, or the same plain value) match to the bit; else what differs, after [param where].
+func _memory_differs(a: Variant, b: Variant, where: String) -> String:
+	if a is GSNpcAiMemory.Entry and b is GSNpcAiMemory.Entry:
+		var x: GSNpcAiMemory.Entry = a
+		var y: GSNpcAiMemory.Entry = b
+		if x.id == y.id and x.position == y.position and x.velocity == y.velocity and x.first_seen == y.first_seen \
+				and x.last_known == y.last_known and x.last_sighted == y.last_sighted and x.source == y.source \
+				and x.hurt_me == y.hurt_me:
+			return ""
+		return "%s: %s against %s" % [where, x.describe(x.last_known), y.describe(y.last_known)]
+
+	if typeof(a) == typeof(b) and a == b:
+		return ""
+
+	return "%s: %s against %s" % [where, a, b]
+
+
+## As [method _memory_differs], against what GameSpice Sim holds ([code]GSSimNpcAiSenses.get_entry[/code]).
+func _native_differs(a: GSNpcAiMemory.Entry, raw: PackedFloat64Array, where: String) -> String:
+	if a == null:
+		return "" if raw.is_empty() else "%s: forgotten against %s" % [where, raw]
+
+	var mine := PackedFloat64Array([
+		a.position.x, a.position.y, a.position.z, a.velocity.x, a.velocity.y, a.velocity.z,
+		a.first_seen, a.last_known, a.last_sighted, float(a.source), a.hurt_me,
+	])
+	return "" if mine == raw else "%s: %s against %s" % [where, mine, raw]
+
+
 func _test_sounds() -> void:
 	_section("sounds")
 

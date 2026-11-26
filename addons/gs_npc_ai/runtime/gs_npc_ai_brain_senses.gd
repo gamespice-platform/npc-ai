@@ -16,6 +16,8 @@ func _sense() -> void:
 
 	var now := context.now
 	var has_target := npc.has_target()
+	# Whether GameSpice Sim already ran the damage window with the sighting.
+	var sensed_natively := false
 
 	if has_target:
 		var at := target_position(Vector3.INF)
@@ -24,14 +26,19 @@ func _sense() -> void:
 		# senses stamp `target_seen_at` with the director's clock on every pass that sees it.
 		var seen := absf(npc.target_seen_at - _world_now()) < 0.0001
 
-		if at != Vector3.INF:
+		var entry: GSNpcAiMemory.Entry = null
+
+		if memory.native != null:
+			entry = _sense_native(c, at, now)
+			sensed_natively = true
+		elif at != Vector3.INF:
 						# Tracked through the grace as well as when seen: during the grace the senses hand over the target's
 						# position, and a memory that stopped at the last true sighting would send the NPC BACK to that
 						# corner when the grace ran out. The search then starts where the chase ended, with the target's velocity.
-			var entry := memory.sighted(npc.target_id, at, now)
+			entry = memory.sighted(npc.target_id, at, now)
 
-			if seen:
-				_report(entry, now)
+		if entry != null and seen:
+			_report(entry, now)
 
 		c.set_flag(GSNpcAiConditions.SEE_ENEMY if seen else GSNpcAiConditions.ENEMY_OCCLUDED)
 
@@ -49,7 +56,10 @@ func _sense() -> void:
 	_had_target = has_target
 	_last_target = npc.target_id if has_target else &""
 
-	_sense_damage(c)
+	if memory.native == null:
+		_sense_damage(c)
+	elif not sensed_natively:
+		_sense_native(c, Vector3.INF, now)
 
 	if npc.def != null and npc.health_fraction() <= low_health_fraction:
 		c.set_flag(GSNpcAiConditions.LOW_HEALTH)
@@ -73,33 +83,64 @@ func _sense() -> void:
 		squad.sweep(_world_now())
 
 
+## GameSpice Sim's half of [method _sense] (see [member GSNpcAiMemory.native]): the target sighted at [param at]
+## (none when [constant Vector3.INF]) and [method _sense_damage], in one call. The sighted entry, or null.
+func _sense_native(c: GSNpcAiConditions, at: Vector3, now: float) -> GSNpcAiMemory.Entry:
+	var max_health := npc.def.max_health if npc.def != null else 0.0
+	var out: PackedFloat64Array = memory.native.think(
+		npc.target_id, at, now, _pending_damage, max_health, heavy_damage_window, heavy_damage_fraction
+	)
+
+	# The script keeps a negative pending too: it is only logged, and zeroed, when positive.
+	if _pending_damage > 0.0:
+		_pending_damage = 0.0
+
+	c.set_flag(int(out[0]))
+
+	if out.size() == 1:
+		return null
+
+	return memory.mirror(npc.target_id, out, now, 1)
+
+
 ## LIGHT_DAMAGE for any hurt since the last think; HEAVY_DAMAGE when the hurt inside the window adds up to [member heavy_damage_fraction] of its health.
 ## A window, not one hit: heavy is how fast health is going (three quick ten-percent hits break off; one a minute does not).
 func _sense_damage(c: GSNpcAiConditions) -> void:
-	var now := context.now
+	var max_health := npc.def.max_health if npc.def != null else 0.0
+	c.set_flag(damage_window(_damage_log, context.now, _pending_damage, heavy_damage_window, max_health, heavy_damage_fraction))
 
 	if _pending_damage > 0.0:
-		c.set_flag(GSNpcAiConditions.LIGHT_DAMAGE)
-		_damage_log.append([now, _pending_damage])
 		_pending_damage = 0.0
 
-	if _damage_log.is_empty():
-		return
+
+## [method _sense_damage]'s window over [param log] ([code][when, amount][/code] pairs, trimmed in place): logs [param pending]
+## when positive, and answers LIGHT_DAMAGE and HEAVY_DAMAGE. GameSpice Sim's [code]GSSimNpcAiSenses.think[/code] is its twin.
+static func damage_window(
+	log: Array, now: float, pending: float, window: float, max_health: float, fraction: float
+) -> int:
+	var bits := 0
+
+	if pending > 0.0:
+		bits |= GSNpcAiConditions.LIGHT_DAMAGE
+		log.append([now, pending])
+
+	if log.is_empty():
+		return bits
 
 	var total := 0.0
 	var kept: Array = []
 
-	for hit in _damage_log:
-		if now - float(hit[0]) <= heavy_damage_window:
+	for hit in log:
+		if now - float(hit[0]) <= window:
 			kept.append(hit)
 			total += float(hit[1])
 
-	_damage_log = kept
+	log.assign(kept)
 
-	var max_health := npc.def.max_health if npc.def != null else 0.0
+	if max_health > 0.0 and total >= max_health * fraction:
+		bits |= GSNpcAiConditions.HEAVY_DAMAGE
 
-	if max_health > 0.0 and total >= max_health * heavy_damage_fraction:
-		c.set_flag(GSNpcAiConditions.HEAVY_DAMAGE)
+	return bits
 
 
 ## Hears what the world's [GSNpcAiSounds] has said since the last think.
