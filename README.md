@@ -2,7 +2,7 @@
 
 How NPCs make decisions in a Godot 4 game. It is the decision half of [GameSpice NPC](https://github.com/gamespice-platform/npc): you describe what an NPC does with a behaviour tree, a state machine, or a score-based (utility) chooser, and gs-npc-ai runs it. It also gives each NPC a character (so two NPCs on one tree behave differently), squad tactics, hearing, cover, shooting, and steering for crowds. Part of TMC's open source [**GameSpice**](https://gamespice.net) collection (MIT licence).
 
-> Built with Claude Code. Every addon has a headless test suite and the suites pass, but little of this has met real players yet. Please report rough edges.
+> gs-npc-ai is a [GameSpice](https://gamespice.net) addon, MIT licensed and built with Claude Code. Its headless suite starts at `examples/npc_ai_selftest.tscn`. The games in [Zee's Games](https://zeesgames.com) are built on the GameSpice addons and run on live servers, and the games with computer-controlled players run their decisions on it.
 
 ## Install
 
@@ -110,6 +110,21 @@ timeout 180 godot --headless --path . res://examples/npc_ai_selftest.tscn
 ```
 
 The suite exits non-zero on failure. Other suites live in `examples/`. `tools/trace_surround.gd` and `tools/plot_trace.py` draw a squad's movement from above; `tools/annotate_map.gd` runs the map annotator on a map.
+
+## Used by
+
+These games vendor it:
+
+- [Fatal Contact](https://zeesgames.com/fatal-contact)
+- [Airdrift](https://zeesgames.com/airdrift)
+- [Playlot](https://zeesgames.com/playlot)
+- [Hungario](https://zeesgames.com/hungario)
+- [Zombie Zone](https://zeesgames.com/zombie-zone)
+- [Hide n Seek](https://zeesgames.com/hide-n-seek)
+- [Prop Hunt](https://zeesgames.com/prop-hunt)
+- [Murder Mystery](https://zeesgames.com/murder-mystery)
+
+The whole collection is at [zeesgames.com](https://zeesgames.com).
 
 ## Licence
 
