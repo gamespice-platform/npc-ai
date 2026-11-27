@@ -27,6 +27,11 @@ var timeout: float = 0.0
 
 var timeout_to: StringName = &""
 
+## [member transitions] unpacked into typed arrays so [method next_state] does no Dictionary lookups per tick.
+## Rebuilt when the sizes differ, so code appending to [member transitions] directly still works.
+var _tests: Array[Callable] = []
+var _tos: Array[StringName] = []
+
 
 static func make(p_id: StringName, p_tick: Callable = Callable()) -> GSNpcAiState:
 	var state := GSNpcAiState.new()
@@ -54,14 +59,25 @@ func next_state(ctx: GSNpcAiContext, elapsed: float) -> StringName:
 	if timeout > 0.0 and elapsed >= timeout and timeout_to != &"":
 		return timeout_to
 
-	for entry in transitions:
-		var transition: Dictionary = entry
-		var test: Callable = transition["test"]
+	if _tests.size() != transitions.size():
+		_unpack()
 
-		if test.is_valid() and bool(test.call(ctx)):
-			return StringName(transition["to"])
+	for i: int in _tests.size():
+		var test: Callable = _tests[i]
+
+		if test.is_valid() and bool(test.call(ctx)):  # perf-lint: allow dynamic_call the transition test is the API
+			return _tos[i]
 
 	return &""
+
+
+func _unpack() -> void:
+	_tests.clear()
+	_tos.clear()
+
+	for entry: Dictionary in transitions:
+		_tests.append(entry["test"])
+		_tos.append(StringName(entry["to"]))  # perf-lint: allow alloc rebuilt only when transitions change
 
 
 func describe() -> Dictionary:

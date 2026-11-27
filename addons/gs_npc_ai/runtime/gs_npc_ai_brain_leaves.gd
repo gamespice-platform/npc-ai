@@ -139,7 +139,7 @@ static func fire_lane_clear(b: GSNpcAiBrain, from: Vector3, to: Vector3, clearan
 	var along := lane / length
 
 	for member in b.squad.members():
-		var other = member if is_instance_valid(member) else null
+		var other: GSNpcAiBrain = (member as GSNpcAiBrain) if is_instance_valid(member) else null
 
 		if other == null or other == b or other.npc == null or not other.npc.is_alive():
 			continue
@@ -380,7 +380,7 @@ static func _waiting_with(b: GSNpcAiBrain) -> Array:
 	out.clear()
 
 	for member in b.squad.members():
-		var other = member if is_instance_valid(member) else null
+		var other: GSNpcAiBrain = (member as GSNpcAiBrain) if is_instance_valid(member) else null
 
 		if other == null or other.npc == null or not other.npc.is_alive():
 			continue
@@ -402,7 +402,7 @@ static func _enemy_facing(b: GSNpcAiBrain, center: Vector3) -> Vector3:
 		var nearest := Vector3.INF
 
 		for member in b.squad.members():
-			var other = member if is_instance_valid(member) else null
+			var other: GSNpcAiBrain = (member as GSNpcAiBrain) if is_instance_valid(member) else null
 
 			if other == null or other == b or other.npc == null or not other.npc.is_alive():
 				continue

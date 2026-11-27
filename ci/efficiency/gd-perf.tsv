@@ -16,7 +16,6 @@ addons/gs_npc_ai/core/gs_npc_ai_heatmap.gd::describe::untyped_array	1
 addons/gs_npc_ai/core/gs_npc_ai_heatmap.gd::from_dictionary::untyped_array	1
 addons/gs_npc_ai/core/gs_npc_ai_heatmap.gd::record::untyped_array	2
 addons/gs_npc_ai/core/gs_npc_ai_heatmap.gd::to_dictionary::untyped_array	4
-addons/gs_npc_ai/core/gs_npc_ai_heatmap.gd::value_at::alloc	1
 addons/gs_npc_ai/core/gs_npc_ai_heatmap.gd::value_at::untyped_array	1
 addons/gs_npc_ai/core/gs_npc_ai_memory.gd::<members>::untyped_array	1
 addons/gs_npc_ai/core/gs_npc_ai_sounds.gd::_prune::alloc	1
@@ -50,9 +49,6 @@ addons/gs_npc_ai/fsm/gs_npc_ai_machine.gd::tick::alloc	2
 addons/gs_npc_ai/fsm/gs_npc_ai_machine.gd::tick::dynamic_call	1
 addons/gs_npc_ai/fsm/gs_npc_ai_state.gd::<members>::untyped_array	1
 addons/gs_npc_ai/fsm/gs_npc_ai_state.gd::describe::untyped_array	1
-addons/gs_npc_ai/fsm/gs_npc_ai_state.gd::next_state::alloc	1
-addons/gs_npc_ai/fsm/gs_npc_ai_state.gd::next_state::dynamic_call	1
-addons/gs_npc_ai/fsm/gs_npc_ai_state.gd::next_state::untyped_array	1
 addons/gs_npc_ai/runtime/gs_npc_ai_avoidance.gd::<members>::untyped_array	1
 addons/gs_npc_ai/runtime/gs_npc_ai_avoidance.gd::advance::dynamic_call	1
 addons/gs_npc_ai/runtime/gs_npc_ai_avoidance.gd::describe::untyped_array	1
@@ -60,11 +56,8 @@ addons/gs_npc_ai/runtime/gs_npc_ai_avoidance.gd::describe_lines::untyped_array	1
 addons/gs_npc_ai/runtime/gs_npc_ai_brain.gd::_waiting_with::untyped_array	1
 addons/gs_npc_ai/runtime/gs_npc_ai_brain.gd::describe::untyped_array	1
 addons/gs_npc_ai/runtime/gs_npc_ai_brain_leaves.gd::<members>::untyped_array	3
-addons/gs_npc_ai/runtime/gs_npc_ai_brain_leaves.gd::_enemy_facing::untyped_var	1
 addons/gs_npc_ai/runtime/gs_npc_ai_brain_leaves.gd::_waiting_with::alloc	1
 addons/gs_npc_ai/runtime/gs_npc_ai_brain_leaves.gd::_waiting_with::untyped_array	2
-addons/gs_npc_ai/runtime/gs_npc_ai_brain_leaves.gd::_waiting_with::untyped_var	1
-addons/gs_npc_ai/runtime/gs_npc_ai_brain_leaves.gd::fire_lane_clear::untyped_var	1
 addons/gs_npc_ai/runtime/gs_npc_ai_brain_motion.gd::_asked_goal::dynamic_call	2
 addons/gs_npc_ai/runtime/gs_npc_ai_brain_motion.gd::_path_goal::dynamic_call	2
 addons/gs_npc_ai/runtime/gs_npc_ai_brain_motion.gd::_watch_progress::dynamic_call	2

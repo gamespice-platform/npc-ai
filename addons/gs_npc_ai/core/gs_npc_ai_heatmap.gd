@@ -26,16 +26,25 @@ var capacity: int = 4096
 
 ## Channel -> { Vector2i cell -> [weight, last_updated] }.
 var _channels: Dictionary = {}
+## Read-only stand-in for a channel with no cells, so lookups allocate nothing.
+const _NONE := {}
 
 
 ## Adds [param weight] at [param position] in [param channel], at [param now].
 func record(channel: StringName, position: Vector3, now: float, weight: float = 1.0) -> void:
-	var cells: Dictionary = _channels.get(channel, {})
+	var cells: Dictionary = _channels.get(channel, _NONE)
+	if cells.is_read_only():
+		cells = {}
+		_channels[channel] = cells
 	var key := cell_of(position)
-	var entry: Array = cells.get(key, [0.0, now])
-	entry = [_decayed(float(entry[0]), float(entry[1]), now) + weight, now]
-	cells[key] = entry
-	_channels[channel] = cells
+	var found: Variant = cells.get(key)
+	if found is Array:
+		# Updated in place: a heat source records every tick, and a fresh pair per call is garbage.
+		var entry: Array = found
+		entry[0] = _decayed(float(entry[0]), float(entry[1]), now) + weight
+		entry[1] = now
+	else:
+		cells[key] = [weight, now]
 
 	if cells.size() > capacity:
 		_evict(cells, now)
@@ -43,7 +52,7 @@ func record(channel: StringName, position: Vector3, now: float, weight: float = 
 
 ## The weight of [param channel] at [param position], decayed to [param now].
 func value_at(channel: StringName, position: Vector3, now: float) -> float:
-	var cells: Dictionary = _channels.get(channel, {})
+	var cells: Dictionary = _channels.get(channel, _NONE)
 	var entry: Variant = cells.get(cell_of(position))
 
 	if not (entry is Array):
@@ -62,7 +71,7 @@ func hottest(
 	count: int = 4,
 	minimum: float = 0.5
 ) -> Array[Vector3]:
-	var cells: Dictionary = _channels.get(channel, {})
+	var cells: Dictionary = _channels.get(channel, _NONE)
 	var scored: Array = []
 	var radius_sq := radius * radius
 
@@ -143,7 +152,7 @@ func _evict(cells: Dictionary, now: float) -> void:
 
 
 func cell_count(channel: StringName) -> int:
-	return (_channels.get(channel, {}) as Dictionary).size()
+	return (_channels.get(channel, _NONE) as Dictionary).size()
 
 
 func clear() -> void:
