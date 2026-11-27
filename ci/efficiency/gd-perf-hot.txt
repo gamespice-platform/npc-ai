@@ -1,0 +1,40 @@
+# Runtime scripts checked by gs-ci scripts/check-gd-perf.py (tools/gd_perf_lint.py).
+# One fnmatch glob per line over tracked paths. Baseline: ci/efficiency/gd-perf.tsv.
+addons/gs_npc_ai/annotate/gs_npc_ai_nav_debug.gd
+addons/gs_npc_ai/core/gs_npc_ai_blackboard.gd
+addons/gs_npc_ai/core/gs_npc_ai_conditions.gd
+addons/gs_npc_ai/core/gs_npc_ai_context.gd
+addons/gs_npc_ai/core/gs_npc_ai_curve.gd
+addons/gs_npc_ai/core/gs_npc_ai_heat_keeper.gd
+addons/gs_npc_ai/core/gs_npc_ai_heatmap.gd
+addons/gs_npc_ai/core/gs_npc_ai_memory.gd
+addons/gs_npc_ai/core/gs_npc_ai_sounds.gd
+addons/gs_npc_ai/core/gs_npc_ai_squad.gd
+addons/gs_npc_ai/core/gs_npc_ai_squads.gd
+addons/gs_npc_ai/core/gs_npc_ai_utility.gd
+addons/gs_npc_ai/fsm/gs_npc_ai_machine.gd
+addons/gs_npc_ai/fsm/gs_npc_ai_state.gd
+addons/gs_npc_ai/gs_npc_ai_api.gd
+addons/gs_npc_ai/runtime/gs_npc_ai_avoidance.gd
+addons/gs_npc_ai/runtime/gs_npc_ai_brain.gd
+addons/gs_npc_ai/runtime/gs_npc_ai_brain_leaves.gd
+addons/gs_npc_ai/runtime/gs_npc_ai_brain_motion.gd
+addons/gs_npc_ai/runtime/gs_npc_ai_brain_senses.gd
+addons/gs_npc_ai/runtime/gs_npc_ai_brain_state.gd
+addons/gs_npc_ai/runtime/gs_npc_ai_brain_tactics.gd
+addons/gs_npc_ai/runtime/gs_npc_ai_scheduler.gd
+addons/gs_npc_ai/runtime/gs_npc_ai_steer_brain.gd
+addons/gs_npc_ai/steer/gs_npc_ai_crowd_grid.gd
+addons/gs_npc_ai/steer/gs_npc_ai_steering.gd
+addons/gs_npc_ai/steer/gs_npc_ai_tactics.gd
+addons/gs_npc_ai/tree/gs_npc_ai_composite.gd
+addons/gs_npc_ai/tree/gs_npc_ai_decorator.gd
+addons/gs_npc_ai/tree/gs_npc_ai_leaf.gd
+addons/gs_npc_ai/tree/gs_npc_ai_node.gd
+addons/gs_npc_ai/tree/gs_npc_ai_parallel.gd
+addons/gs_npc_ai/tree/gs_npc_ai_random.gd
+addons/gs_npc_ai/tree/gs_npc_ai_selector.gd
+addons/gs_npc_ai/tree/gs_npc_ai_sequence.gd
+addons/gs_npc_ai/tree/gs_npc_ai_utility_gate.gd
+# Setup, bake, save/load and per-event paths; per-tick code stays hot.
+cold+: ^(_npc_ready|adopt|declare|builtin|from_dict|from_dictionary|to_dict|to_dictionary|save|settings|show_annotations|read_cvars|cvar_specs|apply|apply_to|validate|personality_for|all_personalities|aggressive|cautious|flanker|from_percentiles|entries|tier_counts|cell_count|members|record|backend|_add|add|when|children|_enter|release_role|_release_roles_on|_hurt_by|_arrow|_to_outline|_number|links_of|get_link)$
